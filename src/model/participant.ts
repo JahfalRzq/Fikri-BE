@@ -1,16 +1,18 @@
 import { IsOptional, IsString,IsUppercase } from "class-validator";
-import { Entity,PrimaryGeneratedColumn,Column,CreateDateColumn,UpdateDateColumn,DeleteDateColumn, OneToMany } from "typeorm";
-import bcrypt from 'bcryptjs';
-import { participant } from "./participant";
+import { Entity,PrimaryGeneratedColumn,Column,CreateDateColumn,UpdateDateColumn,DeleteDateColumn, OneToMany, ManyToOne, JoinColumn } from "typeorm";
+import { user } from "./user";
+import { training } from "./training";
 
+export enum statusTraining{
+    selesai = 'selesai',
+    sedangBerlangsung = 'sedangBerlangsung',
+    tidakSelesai = 'tidakSelesai',
+    belumMulai = 'belumMulai',
 
-export enum UserRole {
-    ADMIN = 'ADMIN',
-    PARTICIPANT = 'PARTICIPANT',
 }
 
 @Entity()
-export class user {
+export class participant {
 
     @PrimaryGeneratedColumn('uuid')
     public id: string
@@ -40,11 +42,11 @@ export class user {
     
     @Column({
         type: 'enum',
-        enum: UserRole,
+        enum: statusTraining,
     })
     @IsString()
     @IsUppercase()
-    public role: UserRole
+    public role: statusTraining
 
     
     @CreateDateColumn()
@@ -55,18 +57,13 @@ export class user {
 
     @DeleteDateColumn()
     public deletedAt: Date
-    
 
-    public hashPassword() {
-    this.password = bcrypt.hashSync(this.password, 8)
-    }
+    @ManyToOne (() => user, (user) => user.participant)
+    @JoinColumn()
+    public user : user
 
-    public checkIfPasswordMatch(unencryptedPassword: string): boolean {
-        return bcrypt.compareSync(unencryptedPassword, this.password)
-    }
-
-    @OneToMany (() => participant, (participant) => participant.user)
-    public participant : participant
-
+    @ManyToOne (() => training, (training) => training.participant)
+    @JoinColumn()
+    public training : training
 
 }
