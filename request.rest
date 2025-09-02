@@ -1,0 +1,114 @@
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImE3YTg1OWY4LTg1ZmEtNDNjNS04YTU0LWI1YjAzZmY4ZTA0MCIsInVzZXJOYW1lIjoiVGVzdEFkbWluMSIsImVtYWlsIjoiQWRtaW4xMjNAZ21haWwuY29tIiwiY3JlYXRlZEF0IjoiMjAyNS0wNy0zMVQwODoyODo1Ny43NjFaIiwiaWF0IjoxNzUzOTcwMTc3LCJleHAiOjE3NTM5NzA4OTd9.NHJ2m1XYMDZ72gTBYFiISMNMpCKPYOgCTO2OJ4AubTU
+
+
+
+
+###
+GET http://localhost:5000/api/v1/seeder/userSeeder
+Content-Type: application/json
+
+
+
+###
+POST  http://localhost:5000/api/v1/auth/login
+Content-Type: application/json
+
+{     "userName"    : "TestAdmin1",
+      "password" : "Admin123!"
+}
+
+###
+POST  http://localhost:5000/api/v1/auth/register
+Content-Type: application/json
+
+{     "userName"    : "TestAdmin1",
+      "email" :  "Admin123@gmail.com",
+      "password" :  "Admin123!",
+      "phone" :  "0895606104423"
+}
+
+
+
+###
+POST  http://localhost:5000/api/v1/auth/login
+Content-Type: application/json
+
+{     "userName"    : "Admin1",
+      "password" : "Admin123!"
+}
+
+###
+GET  http://localhost:5000/api/v1/auth/fetch
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+
+###
+GET http://localhost:5000/api/v1/product/get-all-product?nameProduct=&quantity=&minPrice=&maxPrice=
+Content-Type: application/json
+
+###
+GET  http://localhost:5000/api/v1/product/get-product/3954cd26-4b55-4edf-9aba-7641e41f2712
+Content-Type: application/json
+
+###
+POST  http://localhost:5000/api/v1/product/create-product
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nameProduct": "Paracetamol 500mg",
+  "descriptionProduct": "Obat untuk demam dan nyeri ringan",
+  "price": 15000,
+  "quantity": 5
+}
+
+
+###
+PUT  http://localhost:5000/api/v1/product/update-product/b7387bd2-472f-4fb5-b0f7-6d27553de7ba
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nameProduct": "Paracetamol 500mg",
+  "descriptionProduct": "Obat untuk demam dan nyeri ringan",
+  "price": 15000,
+  "quantity": 15000
+}
+
+
+
+###
+DELETE  http://localhost:5000/api/v1/product/delete-product/b7387bd2-472f-4fb5-b0f7-6d27553de7ba
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+###
+POST  http://localhost:5000/api/v1/transaction/create-transaction
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "productId": "121504e4-f267-4e6a-8c25-8b60202504b6",
+  "quantity": 2
+}
+
+###
+POST  http://localhost:5000/api/v1/transaction/create-transaction
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "productId": "121504e4-f267-4e6a-8c25-8b60202504b6",
+  "quantity": 2
+}
+
+###
+GET  http://localhost:5000/api/v1/transaction/get-transaction-by-customer
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+

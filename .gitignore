@@ -1,0 +1,6 @@
+node_modules/
+public/assets/*
+!public/assets/files/
+public/assets/files/*
+package-lock.json
+.env
