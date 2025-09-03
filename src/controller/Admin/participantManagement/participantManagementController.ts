@@ -213,3 +213,38 @@ export const deleteParticipant = async (req: Request, res: Response) => {
         return res.status(500).json({ message: error.message });
     }
 };
+
+export const changeStatusParticipant = async (req: Request, res: Response) => {
+    const changeStatusSchema = (input) => Joi.object({
+        status: Joi.string().valid(...Object.values(statusTraining)).required(),
+    }).validate(input);
+
+    try {
+        const { id } = req.params;
+        const body = req.body;
+        const schema = changeStatusSchema(req.body);
+
+        if ('error' in schema) {
+            return res.status(422).send(validationResponse(schema));
+        }
+
+        const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
+        if (!userAccess || userAccess.role !== UserRole.ADMIN) {
+            return res.status(403).send(errorResponse("Access Denied: Only ADMIN can change participant status", 403));
+        }
+
+        const existingParticipant = await participantRepository.findOneBy({ id });
+        if (!existingParticipant) {
+            return res.status(404).json({ msg: "Participant not Found" });
+        }
+
+        // Update status peserta
+        existingParticipant.status = body.status as statusTraining;
+
+        await participantRepository.save(existingParticipant);
+
+        return res.status(200).send(successResponse("Participant status updated successfully", { data: existingParticipant }, 200));
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
