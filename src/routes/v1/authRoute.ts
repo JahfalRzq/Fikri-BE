@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { login,fetch } from '../../controller/Auth/authController'
+import { login,fetch } from '../../controller/auth/authController'
 const router = Router()
 import { checkJwt } from '../../utils/checkJwt'
 
