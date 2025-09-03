@@ -17,27 +17,70 @@ export class participant {
     @PrimaryGeneratedColumn('uuid')
     public id: string
 
-    
-    @Column()
+    @Column({
+    default: null,
+    nullable: false
+    })
     @IsString()
-    public userName: string
+    public email: string
+
+    
+    @Column({
+    default: null,
+    nullable: false
+    })
+    @IsString()
+    public firstName: string
+        
+    @Column({
+    default: null,
+    nullable: false
+    })
+    @IsString()
+    public lastName: string
 
     @Column({
     default: null,
     nullable: false
     })
     @IsString()
+    public company: string
+
+    @Column({
+    default: null,
+    nullable: false
+    })
+    @IsString()
+    public companyAddress: string
+
+    @Column({
+    default: null,
+    nullable: true
+    })
+    @IsString()
     @IsOptional()
     public phone: string
 
-    @Column()
+    @Column({
+    default: null,
+    nullable: false
+    })
     @IsString()
-    @IsOptional()
-    public password: string
+    public jobTitle: string
 
-    @Column()
+    @Column({
+    default: null,
+    nullable: false
+    })
     @IsString()
-    public email: string
+    public officePhone: string
+
+    @Column({
+    default: null,
+    nullable: false
+    })
+    @IsString()
+    public message: string
 
     
     @Column({
@@ -46,7 +89,7 @@ export class participant {
     })
     @IsString()
     @IsUppercase()
-    public role: statusTraining
+    public status: statusTraining
 
     
     @CreateDateColumn()
@@ -58,8 +101,7 @@ export class participant {
     @DeleteDateColumn()
     public deletedAt: Date
 
-    @ManyToOne (() => user, (user) => user.participant)
-    @JoinColumn()
+    @OneToMany (() => user, (user) => user.participantId)
     public user : user
 
     @ManyToOne (() => training, (training) => training.participant)
