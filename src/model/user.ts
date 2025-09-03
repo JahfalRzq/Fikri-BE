@@ -1,5 +1,5 @@
 import { IsOptional, IsString,IsUppercase } from "class-validator";
-import { Entity,PrimaryGeneratedColumn,Column,CreateDateColumn,UpdateDateColumn,DeleteDateColumn, OneToMany } from "typeorm";
+import { Entity,PrimaryGeneratedColumn,Column,CreateDateColumn,UpdateDateColumn,DeleteDateColumn, OneToMany, ManyToOne, JoinColumn } from "typeorm";
 import bcrypt from 'bcryptjs';
 import { participant } from "./participant";
 
@@ -65,8 +65,9 @@ export class user {
         return bcrypt.compareSync(unencryptedPassword, this.password)
     }
 
-    @OneToMany (() => participant, (participant) => participant.user)
-    public participant : participant
+    @ManyToOne (() => participant, (participantId) => participantId.user)
+    @JoinColumn({name: 'participant_id'})
+    public participantId : participant
 
 
 }
