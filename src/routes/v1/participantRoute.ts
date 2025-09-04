@@ -13,12 +13,12 @@ import { checkJwt } from '../../utils/checkJwt'
 
 const router = Router()
 
-router.get('/get-all-participant', [getAllParticipant,checkJwt])
-router.get('/get-participant-by-id/:id', [getParticipanttById,checkJwt])
-router.post('/create-participant', [createParticipant,checkJwt])
-router.put('/update-participant/:id', [updateParticipant,checkJwt])
-router.delete('/update-participant/:id', [deleteParticipant,checkJwt])
-router.delete('/change-status-participant/:id', [changeStatusParticipant,checkJwt])
+router.get('/get-all-participant', [checkJwt,getAllParticipant])
+router.get('/get-participant-by-id/:id', [checkJwt,getParticipanttById])
+router.post('/create-participant', [checkJwt,createParticipant])
+router.put('/update-participant/:id', [checkJwt,updateParticipant])
+router.delete('/update-participant/:id', [checkJwt,deleteParticipant])
+router.delete('/change-status-participant/:id', [checkJwt,changeStatusParticipant])
 
 
 
