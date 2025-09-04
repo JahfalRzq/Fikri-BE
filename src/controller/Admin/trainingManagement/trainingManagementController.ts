@@ -119,7 +119,7 @@ export const createTraining = async (req: Request, res: Response) => {
     newTraining.startDateTraining = body.startDateTraining;
     newTraining.endDateTraining = body.endDateTraining;
     console.log("before save :", newTraining)
-    // await trainingRepository.save(newTraining);
+    await trainingRepository.save(newTraining);
 
 
 
