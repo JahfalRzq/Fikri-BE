@@ -17,8 +17,8 @@ router.get('/get-all-participant', [checkJwt,getAllParticipant])
 router.get('/get-participant-by-id/:id', [checkJwt,getParticipanttById])
 router.post('/create-participant', [checkJwt,createParticipant])
 router.put('/update-participant/:id', [checkJwt,updateParticipant])
-router.delete('/update-participant/:id', [checkJwt,deleteParticipant])
-router.delete('/change-status-participant/:id', [checkJwt,changeStatusParticipant])
+router.delete('/delete-participant/:id', [checkJwt,deleteParticipant])
+router.put('/change-status-participant/:id', [checkJwt,changeStatusParticipant])
 
 
 

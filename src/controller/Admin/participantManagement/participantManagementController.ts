@@ -17,26 +17,81 @@ const { successResponse, errorResponse, validationResponse } = require('../../..
 
 export const getAllParticipant = async (req: Request, res: Response) => {
     try {
-        const { firstName, company } = req.query;
+        const { firstName, company, trainingCode, startDateTraining, endDateTraining, limit: queryLimit, page } = req.query;
 
-        const query = participantRepository
+        let startDate: Date | null = null;
+        let endDate: Date | null = null;
+
+        if (startDateTraining) {
+            startDate = new Date(startDateTraining as string);
+            if (isNaN(startDate.getTime())) {
+                return res.status(400).json({ msg: 'Invalid startDateTraining format. Expected YYYY-MM-DD.' });
+            }
+        }
+
+        if (endDateTraining) {
+            endDate = new Date(endDateTraining as string);
+            if (isNaN(endDate.getTime())) {
+                return res.status(400).json({ msg: 'Invalid endDateTraining format. Expected YYYY-MM-DD.' });
+            }
+        }
+
+        const queryBuilder = participantRepository
             .createQueryBuilder("participant")
+            .leftJoinAndSelect("participant.training", "training")
             .orderBy("participant.createdAt", "DESC");
 
         if (firstName) {
-            query.andWhere("product.firstName LIKE :name", {
-                name: `%${firstName}%`,
+            queryBuilder.andWhere("participant.firstName LIKE :firstName", {
+                firstName: `%${firstName}%`,
             });
         }
 
         if (company) {
-            query.andWhere("product.company LIKE :name", {
-                companyProduct: `%${company}%`,
+            queryBuilder.andWhere("participant.company LIKE :company", {
+                company: `%${company}%`,
             });
         }
 
-        const result = await query.getMany();
-        return res.status(200).send(successResponse("Get Participant Success", { data: result }, 200));
+        if (trainingCode) {
+            queryBuilder.andWhere("training.trainingCode LIKE :trainingCode", {
+                trainingCode: `%${trainingCode}%`,
+            });
+        }
+
+        // Apply date range filter if both startDateTraining and endDateTraining are provided
+        if (startDate && endDate) {
+            queryBuilder.andWhere(
+                "training.startDateTraining >= :startDate AND training.endDateTraining <= :endDate",
+                {
+                    startDate,
+                    endDate,
+                }
+            );
+        }
+
+        const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
+
+        if (!userAccess || userAccess.role !== UserRole.ADMIN) {
+            return res.status(403).send(errorResponse("Access Denied: Only ADMIN can access participants", 403));
+        }
+
+        const dynamicLimit = queryLimit ? parseInt(queryLimit as string) : null;
+        const currentPage = page ? parseInt(page as string) : 1; // Convert page to number, default to 1
+        const skip = (currentPage - 1) * (dynamicLimit || 0);
+
+        const [data, totalCount] = await queryBuilder
+            .skip(skip)
+            .take(dynamicLimit || undefined)
+            .getManyAndCount();
+
+        return res.status(200).send(successResponse("Get Participant Success", {
+            data,
+            totalCount,
+            currentPage,
+            totalPages: Math.ceil(totalCount / (dynamicLimit || 1)),
+        }, 200));
+
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
@@ -64,25 +119,28 @@ export const createParticipant = async (req: Request, res: Response) => {
         jobTitle: Joi.string().required(),
         officePhone: Joi.number().min(0).required(),
         message: Joi.string().required(),
+        training: Joi.string().required(),
     }).validate(input);
+
     try {
         const body = req.body;
-        const schema = createParticipantSchema(req.body)
+        const schema = createParticipantSchema(req.body);
         if ('error' in schema) {
-            return res.status(422).send(validationResponse(schema))
+            return res.status(422).send(validationResponse(schema));
         }
-
 
         const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
         if (!userAccess || userAccess.role !== UserRole.ADMIN) {
-            return res.status(403).send(errorResponse("Access Denied: Only ADMIN can create product", 403));
+            return res.status(403).send(errorResponse("Access Denied: Only ADMIN can create participant", 403));
         }
 
-        const id = req.params.id;
-        const trainingType = await trainingRepository.findOneBy({ id })
+        const trainingType = await trainingRepository.findOneBy({ id: body.training });
+        if (!trainingType) {
+            return res.status(404).json({ msg: "Training Not Found" });
+        }
 
         const newParticipant = new participant();
-        newParticipant.email = body.email
+        newParticipant.email = body.email;
         newParticipant.firstName = body.firstName;
         newParticipant.lastName = body.lastName;
         newParticipant.company = body.company;
@@ -92,30 +150,22 @@ export const createParticipant = async (req: Request, res: Response) => {
         newParticipant.officePhone = body.officePhone;
         newParticipant.message = body.message;
         newParticipant.status = statusTraining.belumMulai;
-        newParticipant.training = trainingType
+        newParticipant.training = trainingType;
+
         await participantRepository.save(newParticipant);
 
-        const participantId = await participantRepository.findOneBy({ id: newParticipant.id })
-
-
         const newUser = new user();
-        newUser.email = newParticipant.email
-        newUser.userName = newParticipant.firstName
-        newUser.phone = newParticipant.phone
-        newUser.password = newParticipant.firstName + `${'123)(*'}`
-        newUser.hashPassword()
-        newUser.role = UserRole.PARTICIPANT
-        newUser.participantId = participantId
-        await userRepository.save(newUser)
+        newUser.email = newParticipant.email;
+        newUser.userName = newParticipant.firstName;
+        newUser.phone = newParticipant.phone;
+        newUser.password = newParticipant.firstName + `${'123)(*'}`;
+        newUser.hashPassword();
+        newUser.role = UserRole.PARTICIPANT;
+        newUser.participantId = newParticipant; // Gunakan entitas newParticipant langsung
 
-        const userParticipant = await userRepository.findOneBy({ id: newUser.id })
+        await userRepository.save(newUser);
 
-        newParticipant.user = userParticipant
-        await participantRepository.save(newParticipant)
-
-
-
-        return res.status(201).send(successResponse("Participant created successfully", { data: newParticipant }, 201));
+        return res.status(201).send(successResponse("Participant created successfully", { data: newParticipant, user: newUser }, 201));
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }

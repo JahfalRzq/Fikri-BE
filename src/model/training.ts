@@ -74,7 +74,7 @@ export class training {
 
     
     @OneToMany (() => participant, (participant) => participant.training)
-    public participant : participant
+    public participant: participant[];
     
 
 }

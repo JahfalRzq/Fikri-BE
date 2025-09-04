@@ -1,4 +1,6 @@
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU2ZDA2ZWVmLTk4Y2UtNGViZi04NGNmLWFlNzEwMWE5YzRhYiIsInVzZXJOYW1lIjoiQWRtaW4xIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJjcmVhdGVkQXQiOiIyMDI1LTA5LTA0VDE2OjI5OjI1LjUzMFoiLCJpYXQiOjE3NTcwMDU5NzgsImV4cCI6MTc1NzAwNjY5OH0.M08hu4psn9FbahJD25msAlg7C7PsPDB-zrPsKijcXiA
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU2ZDA2ZWVmLTk4Y2UtNGViZi04NGNmLWFlNzEwMWE5YzRhYiIsInVzZXJOYW1lIjoiQWRtaW4xIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJjcmVhdGVkQXQiOiIyMDI1LTA5LTA0VDE2OjI5OjI1LjUzMFoiLCJpYXQiOjE3NTcwMDg5ODksImV4cCI6MTc1NzAwOTcwOX0.OrkSIl745ovhtwYPCRuafmCqPqWNGejWP_gMZuGzPqs
+
+
 
 
 
@@ -115,37 +117,43 @@ Authorization: Bearer {{token}}
     "phone": 1122334455,
     "jobTitle": "Data Analyst",
     "officePhone": 5544332211,
-    "message": "Looking for advanced JavaScript training"
+    "message": "Looking for advanced JavaScript training",
+    "training": "f26db3b0-fe46-4e49-a457-079b4d63ba16"
 }
 
+
 ###
-PUT  http://localhost:5000/api/v1/participant/update-participant/:id
+PUT  http://localhost:5000/api/v1/participant/update-participant/148bccde-6c45-428d-bd7c-40f5676836f0
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-    "email": "jane.smith@example.com",
-    "firstName": "Jane",
-    "lastName": "Smith",
-    "company": "Innovate Inc",
-    "companyAddress": "456 Innovate Ave",
-    "phone": 1122334455,
-    "jobTitle": "Data Analyst",
-    "officePhone": 5544332211,
-    "message": "Looking for advanced JavaScript training"
+    "email": "updatejane.smith@example.com",
+    "firstName": "update Jane",
+    "lastName": "update Smith",
+    "company": "update Innovate Inc",
+    "companyAddress": "update 456 Innovate Ave",
+    "phone": 1111111,
+    "jobTitle": "update Data Analyst",
+    "officePhone": 1111,
+    "message": "uupdate Looking for advanced JavaScript training"
 }
 
 
 
 ###
-DELETE   http://localhost:5000/api/v1/participant/update-participant/:id
+DELETE   http://localhost:5000/api/v1/participant/delete-participant/148bccde-6c45-428d-bd7c-40f5676836f0
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 ###
-PUT http://localhost:3000/api/v1/participant/change-status-participant/12345678-1234-1234-1234-123456789012
+PUT http://localhost:5000/api/v1/participant/change-status-participant/148bccde-6c45-428d-bd7c-40f5676836f0
 Content-Type: application/json
 Authorization: Bearer {{token}}
+
+{
+    "status" : "sedangBerlangsung"
+}
 
 
 

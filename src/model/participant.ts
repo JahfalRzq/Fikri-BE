@@ -102,7 +102,7 @@ export class participant {
     public deletedAt: Date
 
     @OneToMany (() => user, (user) => user.participantId)
-    public user : user
+    public user: user[];
 
     @ManyToOne (() => training, (training) => training.participant)
     @JoinColumn()
