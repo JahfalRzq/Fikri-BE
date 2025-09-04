@@ -17,6 +17,13 @@ export const getAllTraining = async (req: Request, res: Response) => {
   try {
     const { trainingName, category, trainingCode, startDateTraining, endDateTraining } = req.query;
 
+    const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
+    
+    if (!userAccess || userAccess.role !== UserRole.ADMIN) {
+      return res.status(403).send(errorResponse("Access Denied: Only ADMIN can create training", 403));
+    }
+
+
     const query = trainingRepository
       .createQueryBuilder("training")
       .orderBy("training.createdAt", "DESC");
@@ -63,6 +70,13 @@ export const getAllTraining = async (req: Request, res: Response) => {
 export const getTrainingtById = async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
+
+    const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
+    
+    if (!userAccess || userAccess.role !== UserRole.ADMIN) {
+      return res.status(403).send(errorResponse("Access Denied: Only ADMIN can create training", 403));
+    }
+
     const result = await trainingRepository.findOneBy({ id });
     if (!result) return res.status(404).json({ msg: "Training Not Found" });
     return res.status(200).send(successResponse("Get Training by ID Success", { data: result }, 200));
@@ -90,9 +104,12 @@ export const createTraining = async (req: Request, res: Response) => {
 
 
     const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
+    console.log('user acces :',userAccess)
+
     if (!userAccess || userAccess.role !== UserRole.ADMIN) {
       return res.status(403).send(errorResponse("Access Denied: Only ADMIN can create training", 403));
     }
+
     const newTraining = new training();
     newTraining.trainingName = body.trainingName;
     newTraining.category = body.category;
@@ -101,7 +118,8 @@ export const createTraining = async (req: Request, res: Response) => {
     newTraining.price = body.price;
     newTraining.startDateTraining = body.startDateTraining;
     newTraining.endDateTraining = body.endDateTraining;
-    await trainingRepository.save(newTraining);
+    console.log("before save :", newTraining)
+    // await trainingRepository.save(newTraining);
 
 
 
