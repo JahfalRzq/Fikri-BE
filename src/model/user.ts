@@ -46,6 +46,13 @@ export class user {
     @IsUppercase()
     public role: UserRole
 
+    @Column({
+        default: null,
+        nullable: true
+    })
+    @IsString()
+    public image: string
+
     
     @CreateDateColumn()
     public createdAt: Date
