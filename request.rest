@@ -1,6 +1,4 @@
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImE3YTg1OWY4LTg1ZmEtNDNjNS04YTU0LWI1YjAzZmY4ZTA0MCIsInVzZXJOYW1lIjoiVGVzdEFkbWluMSIsImVtYWlsIjoiQWRtaW4xMjNAZ21haWwuY29tIiwiY3JlYXRlZEF0IjoiMjAyNS0wNy0zMVQwODoyODo1Ny43NjFaIiwiaWF0IjoxNzUzOTcwMTc3LCJleHAiOjE3NTM5NzA4OTd9.NHJ2m1XYMDZ72gTBYFiISMNMpCKPYOgCTO2OJ4AubTU
-
-
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNhYmQ1Y2Y4LTIyNmEtNDRiNi05YWRmLTNlYzQ5MGI0ZjE1OCIsInVzZXJOYW1lIjoiQWRtaW4xIiwiZW1haWwiOiIiLCJjcmVhdGVkQXQiOiIyMDI1LTA5LTA0VDE1OjQxOjAwLjQ0NVoiLCJpYXQiOjE3NTcwMDA1NjEsImV4cCI6MTc1NzAwMTI4MX0.tKgbipTwKHy3mMAghGc_zlpm9WF0FQjz3FCaQeNF42U
 
 
 ###
@@ -24,7 +22,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 ###
-GET  http://localhost:5000/api/v1/dasboard/dashboard-data
+GET http://localhost:5000/api/v1/dashboard/dashboard-data
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
