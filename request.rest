@@ -13,8 +13,8 @@ Content-Type: application/json
 POST  http://localhost:5000/api/v1/auth/login
 Content-Type: application/json
 
-{     "userName"    : "TestAdmin1",
-      "password" : "Admin123!"
+{     "userName"    : "Admin1",
+      "password" : "Admin1!0"
 }
 
 
