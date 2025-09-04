@@ -16,7 +16,7 @@ router.get('/get-all-training', [checkJwt,getAllTraining])
 router.get('/get-training-by-id/:id', [checkJwt,getTrainingtById])
 router.post('/create-training', [checkJwt,createTraining])
 router.put('/update-training/:id', [checkJwt,updateTraining])
-router.delete('/update-training/:id', [checkJwt,deleteTraining])
+router.delete('/delete-training/:id', [checkJwt,deleteTraining])
 
 
 export default router

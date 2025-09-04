@@ -14,57 +14,84 @@ const { successResponse, errorResponse, validationResponse } = require('../../..
 
 
 export const getAllTraining = async (req: Request, res: Response) => {
-  try {
-    const { trainingName, category, trainingCode, startDateTraining, endDateTraining } = req.query;
+    try {
+        const { trainingName, category, trainingCode, start_date, end_date, limit: queryLimit, page } = req.query;
 
-    const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
-    
-    if (!userAccess || userAccess.role !== UserRole.ADMIN) {
-      return res.status(403).send(errorResponse("Access Denied: Only ADMIN can create training", 403));
+        let startDate: Date | null = null;
+        let endDate: Date | null = null;
+
+        if (start_date) {
+            startDate = new Date(start_date as string);
+            if (isNaN(startDate.getTime())) {
+                return res.status(400).json({ msg: 'Invalid start_date format. Expected YYYY-MM-DD.' });
+            }
+        }
+
+        if (end_date) {
+            endDate = new Date(end_date as string);
+            if (isNaN(endDate.getTime())) {
+                return res.status(400).json({ msg: 'Invalid end_date format. Expected YYYY-MM-DD.' });
+            }
+        }
+
+        const queryBuilder = trainingRepository
+            .createQueryBuilder("training")
+            .orderBy("training.createdAt", "DESC");
+
+        if (trainingName) {
+            queryBuilder.andWhere("training.trainingName LIKE :trainingName", {
+                trainingName: `%${trainingName}%`,
+            });
+        }
+
+        if (category) {
+            queryBuilder.andWhere("training.category LIKE :category", {
+                category: `%${category}%`,
+            });
+        }
+
+        if (trainingCode) {
+            queryBuilder.andWhere("training.trainingCode LIKE :trainingCode", {
+                trainingCode: `%${trainingCode}%`,
+            });
+        }
+
+        // Apply date range filter if both start_date and end_date are provided
+        if (startDate && endDate) {
+            queryBuilder.andWhere(
+                "training.startDateTraining >= :startDate AND training.startDateTraining <= :endDate",
+                {
+                    startDate,
+                    endDate,
+                }
+            );
+        }
+
+        const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
+
+        if (!userAccess || userAccess.role !== UserRole.ADMIN) {
+            return res.status(403).send(errorResponse("Access Denied: Only ADMIN can access training", 403));
+        }
+
+        const dynamicLimit = queryLimit ? parseInt(queryLimit as string) : null;
+        const currentPage = page ? parseInt(page as string) : 1; // Convert page to number, default to 1
+        const skip = (currentPage - 1) * (dynamicLimit || 0);
+
+        const [data, totalCount] = await queryBuilder
+            .skip(skip)
+            .take(dynamicLimit || undefined)
+            .getManyAndCount();
+
+        return res.status(200).send(successResponse("Get Training Success", {
+            data,
+            totalCount,
+            currentPage,
+            totalPages: Math.ceil(totalCount / (dynamicLimit || 1)),
+        }, 200));
+
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
     }
-
-
-    const query = trainingRepository
-      .createQueryBuilder("training")
-      .orderBy("training.createdAt", "DESC");
-
-    if (trainingName) {
-      query.andWhere("training.trainingName LIKE :name", {
-        name: `%${trainingName}%`,
-      });
-    }
-
-    if (category) {
-      query.andWhere("training.category LIKE :name", {
-        category: `%${category}%`,
-      });
-    }
-
-    if (trainingCode) {
-      query.andWhere("training.trainingCode LIKE :name", {
-        trainingCode: `%${trainingCode}%`,
-      });
-    }
-
-    if (startDateTraining) {
-      query.andWhere("training.startDateTraining LIKE :name", {
-        startDateTraining: `%${startDateTraining}%`,
-      });
-    }
-
-    if (endDateTraining) {
-      query.andWhere("product.endDateTraining LIKE :name", {
-        endDateTraining: `%${endDateTraining}%`,
-      });
-    }
-
-
-
-    const result = await query.getMany();
-    return res.status(200).send(successResponse("Get Training Success", { data: result }, 200));
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
 };
 
 export const getTrainingtById = async (req: Request, res: Response) => {

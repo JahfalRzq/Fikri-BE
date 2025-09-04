@@ -1,4 +1,7 @@
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNhYmQ1Y2Y4LTIyNmEtNDRiNi05YWRmLTNlYzQ5MGI0ZjE1OCIsInVzZXJOYW1lIjoiQWRtaW4xIiwiZW1haWwiOiIiLCJjcmVhdGVkQXQiOiIyMDI1LTA5LTA0VDE1OjQxOjAwLjQ0NVoiLCJpYXQiOjE3NTcwMDA1NjEsImV4cCI6MTc1NzAwMTI4MX0.tKgbipTwKHy3mMAghGc_zlpm9WF0FQjz3FCaQeNF42U
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU2ZDA2ZWVmLTk4Y2UtNGViZi04NGNmLWFlNzEwMWE5YzRhYiIsInVzZXJOYW1lIjoiQWRtaW4xIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJjcmVhdGVkQXQiOiIyMDI1LTA5LTA0VDE2OjI5OjI1LjUzMFoiLCJpYXQiOjE3NTcwMDU5NzgsImV4cCI6MTc1NzAwNjY5OH0.M08hu4psn9FbahJD25msAlg7C7PsPDB-zrPsKijcXiA
+
+
+
 
 
 ###
@@ -29,36 +32,20 @@ Authorization: Bearer {{token}}
 
 //Training endpoint
 ###
-GET  http://localhost:5000/api/v1/training/get-all-training?trainingName=Blockchain-Developer?category=Developer?trainingCode=001?startDateTraining=01/01/2000?endDateTraining=02/02/2000
+GET http://localhost:5000/api/v1/training/get-all-training?trainingName=&category=&start_date=&end_date=&limit=10&page=1
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 
 ###
-GET  http://localhost:5000/api/v1/training/get-training-by-id/12345678-1234-1234-1234-123456789012
+GET  http://localhost:5000/api/v1/training/get-training-by-id/c3a81e76-051e-4b56-81e1-9fd508df6533
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 
 
 ###
-POST  http://localhost:5000/api/v1/training/create-training
-Content-Type: application/json
-Authorization: Bearer {{token}}
-
-{
-    "trainingName": "Advanced JavaScript",
-    "category": "Programming",
-    "trainingCode": "JS201",
-    "coach": "Jane Smith",
-    "price": 200,
-    "startDateTraining": "2023-11-01",
-    "endDateTraining": "2023-11-10"
-}
-
-
-###
-PUT  http://localhost:5000/api/v1/training/update-training/:1234567
+POST http://localhost:5000/api/v1/training/create-training
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -73,10 +60,26 @@ Authorization: Bearer {{token}}
 }
 
 
+###
+PUT  http://localhost:5000/api/v1/training/update-training/c3a81e76-051e-4b56-81e1-9fd508df6533
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "trainingName": "update Advanced JavaScript",
+    "category": "update Programming",
+    "trainingCode": "update JS201",
+    "coach": "update Jane Smith",
+    "price": 300,
+    "startDateTraining": "2025-11-01",
+    "endDateTraining": "2025-11-10"
+}
+
+
 
 
 ###
-DELETE   http://localhost:5000/api/v1/training/delete-training/12345678-1234-1234-1234-123456789013
+DELETE   http://localhost:5000/api/v1/training/delete-training/c3a81e76-051e-4b56-81e1-9fd508df6533
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -86,7 +89,6 @@ Authorization: Bearer {{token}}
 
 //Participant endpoint
 ###
-        const { firstName, company } = req.query;
 GET  http://localhost:5000/api/v1/participant/get-all-participant?firstName=John?=oemahWebsite
 Content-Type: application/json
 Authorization: Bearer {{token}}
