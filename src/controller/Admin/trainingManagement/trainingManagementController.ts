@@ -22,32 +22,32 @@ export const getAllTraining = async (req: Request, res: Response) => {
       .orderBy("training.createdAt", "DESC");
 
     if (trainingName) {
-      query.andWhere("product.trainingName LIKE :name", {
+      query.andWhere("training.trainingName LIKE :name", {
         name: `%${trainingName}%`,
       });
     }
 
     if (category) {
-      query.andWhere("product.category LIKE :name", {
-        categoryProduct: `%${category}%`,
+      query.andWhere("training.category LIKE :name", {
+        category: `%${category}%`,
       });
     }
 
     if (trainingCode) {
-      query.andWhere("product.trainingCode LIKE :name", {
-        trainingCodeProduct: `%${trainingCode}%`,
+      query.andWhere("training.trainingCode LIKE :name", {
+        trainingCode: `%${trainingCode}%`,
       });
     }
 
     if (startDateTraining) {
-      query.andWhere("product.startDateTraining LIKE :name", {
-        startDateTrainingProduct: `%${startDateTraining}%`,
+      query.andWhere("training.startDateTraining LIKE :name", {
+        startDateTraining: `%${startDateTraining}%`,
       });
     }
 
     if (endDateTraining) {
       query.andWhere("product.endDateTraining LIKE :name", {
-        endDateTrainingProduct: `%${endDateTraining}%`,
+        endDateTraining: `%${endDateTraining}%`,
       });
     }
 
