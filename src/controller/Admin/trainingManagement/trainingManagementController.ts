@@ -91,7 +91,7 @@ export const createTraining = async (req: Request, res: Response) => {
 
     const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
     if (!userAccess || userAccess.role !== UserRole.ADMIN) {
-      return res.status(403).send(errorResponse("Access Denied: Only ADMIN can create product", 403));
+      return res.status(403).send(errorResponse("Access Denied: Only ADMIN can create training", 403));
     }
     const newTraining = new training();
     newTraining.trainingName = body.trainingName;
