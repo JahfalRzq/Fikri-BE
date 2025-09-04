@@ -17,7 +17,7 @@ const { successResponse, errorResponse, validationResponse } = require('../../..
 
 export const getAllParticipant = async (req: Request, res: Response) => {
     try {
-        const { firstName, company, trainingCode, startDateTraining, endDateTraining } = req.query;
+        const { firstName, company } = req.query;
 
         const query = participantRepository
             .createQueryBuilder("participant")
