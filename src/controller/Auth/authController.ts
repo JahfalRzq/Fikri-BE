@@ -34,11 +34,11 @@ export const login = async (req: Request, res: Response) => {
         })
 
         if (!user) {
-            return res.status(409).send(errorResponse('Incorect username', 409))
+            return res.status(401).send(errorResponse('Incorect username', 401))
         }
 
         if (!user.checkIfPasswordMatch(password)) {
-            return res.status(409).send(errorResponse('Incorect password', 409))
+            return res.status(401).send(errorResponse('Incorect password', 401))
         }
 
 
