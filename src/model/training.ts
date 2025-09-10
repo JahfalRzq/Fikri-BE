@@ -1,4 +1,4 @@
-import { IsDate, isDate, IsOptional, IsString,IsUppercase } from "class-validator";
+import { IsDate, isDate, IsNumber, IsOptional, IsString,IsUppercase } from "class-validator";
 import { Entity,PrimaryGeneratedColumn,Column,CreateDateColumn,UpdateDateColumn,DeleteDateColumn, OneToMany } from "typeorm";
 import { participant } from "./participant";
 
@@ -44,8 +44,8 @@ export class training {
     default: null,
     nullable: false
     })
-    @IsString()
-    public price: string
+    @IsNumber()
+    public price: Number
 
     @Column({
     default: null,
