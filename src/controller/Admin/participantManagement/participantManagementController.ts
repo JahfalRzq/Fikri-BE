@@ -4,6 +4,7 @@ import { user, UserRole } from "../../../model/user";
 import Joi from "joi";
 import { training } from "../../../model/training";
 import { participant, statusTraining } from "../../../model/participant";
+import { Like } from "typeorm";
 
 const trainingRepository = AppDataSource.getRepository(training);
 const userRepository = AppDataSource.getRepository(user);
@@ -12,23 +13,45 @@ const participantRepository = AppDataSource.getRepository(participant);
 
 const { successResponse, errorResponse, validationResponse } = require('../../../utils/response');
 
+
 export const getParticipantsByTrainingId = async (req: Request, res: Response) => {
   try {
     const trainingId = req.params.id;
 
-    // ambil query params untuk pagination
+    // ambil query params untuk pagination & search
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const search = (req.query.search as string) || "";
+
     const skip = (page - 1) * limit;
 
-    // ambil data participant + total count
-    const [participants, totalCount] = await participantRepository.findAndCount({
-      where: { training: { id: trainingId } },
-      relations: ["training"],
-      skip,
-      take: limit,
-      order: { createdAt: "DESC" }, // optional, biar urut terbaru dulu
-    });
+    // buat kondisi pencarian
+    const whereCondition: any = {
+      training: { id: trainingId },
+    };
+
+    if (search) {
+      whereCondition["email"] = Like(`%${search}%`);
+      // atau multi field:
+      // pake queryBuilder lebih fleksibel (lihat bawah)
+    }
+
+    // jika mau multi-field search lebih baik pakai queryBuilder
+    const queryBuilder = participantRepository
+      .createQueryBuilder("participant")
+      .leftJoinAndSelect("participant.training", "training")
+      .where("training.id = :trainingId", { trainingId });
+
+    if (search) {
+      queryBuilder.andWhere(
+        "(participant.firstName LIKE :search OR participant.lastName LIKE :search OR participant.email LIKE :search)",
+        { search: `%${search}%` }
+      );
+    }
+
+    queryBuilder.skip(skip).take(limit).orderBy("participant.createdAt", "DESC");
+
+    const [participants, totalCount] = await queryBuilder.getManyAndCount();
 
     const totalPages = Math.ceil(totalCount / limit);
 
@@ -48,6 +71,7 @@ export const getParticipantsByTrainingId = async (req: Request, res: Response) =
     return res.status(500).json({ message: error.message });
   }
 };
+
 
 
 
