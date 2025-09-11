@@ -12,6 +12,28 @@ const participantRepository = AppDataSource.getRepository(participant);
 
 const { successResponse, errorResponse, validationResponse } = require('../../../utils/response');
 
+export const getParticipantsByTrainingId = async (req: Request, res: Response) => {
+  try {
+    const trainingId = req.params.id;
+
+    const participants = await participantRepository.find({
+      where: { training: { id: trainingId } }, // ✅ query lewat relasi training
+      relations: ["training"],
+    });
+
+    return res.status(200).send(
+      successResponse(
+        "Get Participants by Training ID Success",
+        { data: participants },
+        200
+      )
+    );
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+
 
 
 
@@ -107,6 +129,8 @@ export const getParticipanttById = async (req: Request, res: Response) => {
         return res.status(500).json({ message: error.message });
     }
 };
+
+
 
 export const createParticipant = async (req: Request, res: Response) => {
     const createParticipantSchema = (input) => Joi.object({
