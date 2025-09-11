@@ -16,15 +16,31 @@ export const getParticipantsByTrainingId = async (req: Request, res: Response) =
   try {
     const trainingId = req.params.id;
 
-    const participants = await participantRepository.find({
-      where: { training: { id: trainingId } }, // ✅ query lewat relasi training
+    // ambil query params untuk pagination
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    // ambil data participant + total count
+    const [participants, totalCount] = await participantRepository.findAndCount({
+      where: { training: { id: trainingId } },
       relations: ["training"],
+      skip,
+      take: limit,
+      order: { createdAt: "DESC" }, // optional, biar urut terbaru dulu
     });
+
+    const totalPages = Math.ceil(totalCount / limit);
 
     return res.status(200).send(
       successResponse(
         "Get Participants by Training ID Success",
-        { data: participants },
+        {
+          data: participants,
+          totalCount,
+          currentPage: page,
+          totalPages,
+        },
         200
       )
     );
