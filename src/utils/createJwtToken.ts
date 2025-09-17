@@ -10,5 +10,10 @@ export const createJwtToken = (payload: JwtPayload): string => {
     expiresIn: 60 * 60 * 24, // Default to 1 day
   };
 
-  return jwt.sign(payload, process.env.JWT_SECRET, options);
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is not defined');
+  }
+
+  return jwt.sign(payload, secret, options);
 };
