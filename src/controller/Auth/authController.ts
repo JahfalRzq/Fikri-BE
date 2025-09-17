@@ -8,9 +8,7 @@ import {
     successResponse,
     errorResponse,
 } from "@/utils/response";
-const { joiPasswordExtendCore } = require("joi-password");
 
-const _joiPassword = Joi.extend(joiPasswordExtendCore);
 const userRepository = AppDataSource.getRepository(user);
 
 export const fetch = async (req: Request, res: Response) => {
