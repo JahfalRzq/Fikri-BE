@@ -1,9 +1,9 @@
 import { Router } from 'express'
 import { getDashboardData } from '../../controller/admin/dashboard/dashboardData'
-import { checkJwt } from '../../utils/checkJwt'
+import { authMiddleware, onlyAdminMiddleware } from '../../middleware/authMiddleware'
 
 const router = Router()
 
-router.get('/dashboard-data', [checkJwt ,getDashboardData])
+router.get('/dashboard-data', [authMiddleware, onlyAdminMiddleware, getDashboardData])
 
 export default router

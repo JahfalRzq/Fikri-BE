@@ -15,61 +15,61 @@ const { successResponse, errorResponse, validationResponse } = require('../../..
 
 
 export const getParticipantsByTrainingId = async (req: Request, res: Response) => {
-  try {
-    const trainingId = req.params.id;
+    try {
+        const trainingId = req.params.id;
 
-    // ambil query params untuk pagination & search
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const search = (req.query.search as string) || "";
+        // ambil query params untuk pagination & search
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const search = (req.query.search as string) || "";
 
-    const skip = (page - 1) * limit;
+        const skip = (page - 1) * limit;
 
-    // buat kondisi pencarian
-    const whereCondition: any = {
-      training: { id: trainingId },
-    };
+        // buat kondisi pencarian
+        const whereCondition: any = {
+            training: { id: trainingId },
+        };
 
-    if (search) {
-      whereCondition["email"] = Like(`%${search}%`);
-      // atau multi field:
-      // pake queryBuilder lebih fleksibel (lihat bawah)
+        if (search) {
+            whereCondition["email"] = Like(`%${search}%`);
+            // atau multi field:
+            // pake queryBuilder lebih fleksibel (lihat bawah)
+        }
+
+        // jika mau multi-field search lebih baik pakai queryBuilder
+        const queryBuilder = participantRepository
+            .createQueryBuilder("participant")
+            .leftJoinAndSelect("participant.training", "training")
+            .where("training.id = :trainingId", { trainingId });
+
+        if (search) {
+            queryBuilder.andWhere(
+                "(participant.firstName LIKE :search OR participant.lastName LIKE :search OR participant.email LIKE :search)",
+                { search: `%${search}%` }
+            );
+        }
+
+        queryBuilder.skip(skip).take(limit).orderBy("participant.createdAt", "DESC");
+
+        const [participants, totalCount] = await queryBuilder.getManyAndCount();
+
+        const totalPages = Math.ceil(totalCount / limit);
+
+        return res.status(200).send(
+            successResponse(
+                "Get Participants by Training ID Success",
+                {
+                    data: participants,
+                    totalCount,
+                    currentPage: page,
+                    totalPages,
+                },
+                200
+            )
+        );
+    } catch (error: any) {
+        return res.status(500).json({ message: error.message });
     }
-
-    // jika mau multi-field search lebih baik pakai queryBuilder
-    const queryBuilder = participantRepository
-      .createQueryBuilder("participant")
-      .leftJoinAndSelect("participant.training", "training")
-      .where("training.id = :trainingId", { trainingId });
-
-    if (search) {
-      queryBuilder.andWhere(
-        "(participant.firstName LIKE :search OR participant.lastName LIKE :search OR participant.email LIKE :search)",
-        { search: `%${search}%` }
-      );
-    }
-
-    queryBuilder.skip(skip).take(limit).orderBy("participant.createdAt", "DESC");
-
-    const [participants, totalCount] = await queryBuilder.getManyAndCount();
-
-    const totalPages = Math.ceil(totalCount / limit);
-
-    return res.status(200).send(
-      successResponse(
-        "Get Participants by Training ID Success",
-        {
-          data: participants,
-          totalCount,
-          currentPage: page,
-          totalPages,
-        },
-        200
-      )
-    );
-  } catch (error: any) {
-    return res.status(500).json({ message: error.message });
-  }
 };
 
 
@@ -132,12 +132,6 @@ export const getAllParticipant = async (req: Request, res: Response) => {
             );
         }
 
-        const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
-
-        if (!userAccess || userAccess.role !== UserRole.ADMIN) {
-            return res.status(403).send(errorResponse("Access Denied: Only ADMIN can access participants", 403));
-        }
-
         const dynamicLimit = queryLimit ? parseInt(queryLimit as string) : null;
         const currentPage = page ? parseInt(page as string) : 1; // Convert page to number, default to 1
         const skip = (currentPage - 1) * (dynamicLimit || 0);
@@ -191,11 +185,6 @@ export const createParticipant = async (req: Request, res: Response) => {
         const schema = createParticipantSchema(req.body);
         if ('error' in schema) {
             return res.status(422).send(validationResponse(schema));
-        }
-
-        const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
-        if (!userAccess || userAccess.role !== UserRole.ADMIN) {
-            return res.status(403).send(errorResponse("Access Denied: Only ADMIN can create participant", 403));
         }
 
         const trainingType = await trainingRepository.findOneBy({ id: body.training });
@@ -259,11 +248,6 @@ export const updateParticipant = async (req: Request, res: Response) => {
             return res.status(422).send(validationResponse(schema));
         }
 
-        const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
-        if (!userAccess || userAccess.role !== UserRole.ADMIN) {
-            return res.status(403).send(errorResponse("Access Denied: Only ADMIN can update participant", 403));
-        }
-
         const existingParticipant = await participantRepository.findOneBy({ id });
         if (!existingParticipant) {
             return res.status(404).json({ msg: "Participant Not Found" });
@@ -303,11 +287,6 @@ export const deleteParticipant = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
-        if (!userAccess || userAccess.role !== UserRole.ADMIN) {
-            return res.status(403).send(errorResponse("Access Denied: Only ADMIN can delete participant", 403));
-        }
-
         const participantToDelete = await participantRepository.findOneBy({ id });
         if (!participantToDelete) {
             return res.status(404).json({ msg: "Participant not Found" });
@@ -340,11 +319,6 @@ export const changeStatusParticipant = async (req: Request, res: Response) => {
 
         if ('error' in schema) {
             return res.status(422).send(validationResponse(schema));
-        }
-
-        const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
-        if (!userAccess || userAccess.role !== UserRole.ADMIN) {
-            return res.status(403).send(errorResponse("Access Denied: Only ADMIN can change participant status", 403));
         }
 
         const existingParticipant = await participantRepository.findOneBy({ id });

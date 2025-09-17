@@ -36,6 +36,7 @@ export const getAllTraining = async (req: Request, res: Response) => {
 
         const queryBuilder = trainingRepository
             .createQueryBuilder("training")
+            .leftJoinAndSelect("training.participant", "participant")
             .orderBy("training.createdAt", "DESC");
 
         if (trainingName) {
@@ -67,20 +68,21 @@ export const getAllTraining = async (req: Request, res: Response) => {
             );
         }
 
-        const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
-
-        if (!userAccess || userAccess.role !== UserRole.ADMIN) {
-            return res.status(403).send(errorResponse("Access Denied: Only ADMIN can access training", 403));
-        }
-
         const dynamicLimit = queryLimit ? parseInt(queryLimit as string) : null;
         const currentPage = page ? parseInt(page as string) : 1; // Convert page to number, default to 1
         const skip = (currentPage - 1) * (dynamicLimit || 0);
 
-        const [data, totalCount] = await queryBuilder
+        const [rawData, totalCount] = await queryBuilder
             .skip(skip)
             .take(dynamicLimit || undefined)
             .getManyAndCount();
+
+        // Transform data to include totalParticipants
+        const data = rawData.map(training => ({
+            ...training,
+            totalParticipants: training.participant ? training.participant.length : 0,
+            participant: undefined // Remove participant array from response
+        }));
 
         return res.status(200).send(successResponse("Get Training Success", {
             data,
@@ -98,15 +100,23 @@ export const getTrainingtById = async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
 
-    const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
-    
-    if (!userAccess || userAccess.role !== UserRole.ADMIN) {
-      return res.status(403).send(errorResponse("Access Denied: Only ADMIN can create training", 403));
-    }
+    const result = await trainingRepository
+      .createQueryBuilder("training")
+      .leftJoinAndSelect("training.participant", "participant")
+      .where("training.id = :id", { id })
+      .getOne();
 
-    const result = await trainingRepository.findOneBy({ id });
     if (!result) return res.status(404).json({ msg: "Training Not Found" });
-    return res.status(200).send(successResponse("Get Training by ID Success", { data: result }, 200));
+
+    // Transform data to include totalParticipants
+    const trainingWithParticipants = {
+      ...result,
+      participants: result.participant || [],
+      totalParticipants: result.participant ? result.participant.length : 0,
+      participant: undefined // Remove the original participant property
+    };
+
+    return res.status(200).send(successResponse("Get Training by ID Success", { data: trainingWithParticipants }, 200));
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -129,14 +139,6 @@ export const createTraining = async (req: Request, res: Response) => {
       return res.status(422).send(validationResponse(schema))
     }
 
-
-    const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
-    console.log('user acces :',userAccess)
-
-    if (!userAccess || userAccess.role !== UserRole.ADMIN) {
-      return res.status(403).send(errorResponse("Access Denied: Only ADMIN can create training", 403));
-    }
-
     const newTraining = new training();
     newTraining.trainingName = body.trainingName;
     newTraining.category = body.category;
@@ -147,8 +149,6 @@ export const createTraining = async (req: Request, res: Response) => {
     newTraining.endDateTraining = body.endDateTraining;
     console.log("before save :", newTraining)
     await trainingRepository.save(newTraining);
-
-
 
     return res.status(201).send(successResponse("Training created successfully", { data: newTraining }, 201));
   } catch (error) {
@@ -175,12 +175,6 @@ export const updateTraining = async (req: Request, res: Response) => {
       return res.status(422).send(validationResponse(schema))
     }
 
-
-    const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
-    if (!userAccess || userAccess.role !== UserRole.ADMIN) {
-      return res.status(403).send(errorResponse("Access Denied: Only ADMIN can update training", 403));
-    }
-
     const updateTraining = await trainingRepository.findOneBy({ id });
     if (!updateTraining) {
       return res.status(404).json({ msg: "Training Not Found" });
@@ -194,7 +188,6 @@ export const updateTraining = async (req: Request, res: Response) => {
     updateTraining.startDateTraining = body.startDateTraining;
     updateTraining.endDateTraining = body.endDateTraining;
 
-
     await trainingRepository.save(updateTraining);
 
     return res.status(200).send(successResponse("Update Training Success", { data: updateTraining }, 200));
@@ -206,11 +199,6 @@ export const updateTraining = async (req: Request, res: Response) => {
 export const deleteTraining = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
-    const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
-    if (!userAccess || userAccess.role !== UserRole.ADMIN) {
-      return res.status(403).send(errorResponse("Access Denied: Only ADMIN can delete Training", 403));
-    }
 
     const trainingToDelete = await trainingRepository.findOneBy({ id });
     if (!trainingToDelete) {

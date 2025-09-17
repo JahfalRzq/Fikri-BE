@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { 
+import {
     getAllParticipant,
     getParticipanttById,
     getParticipantsByTrainingId,
@@ -7,19 +7,19 @@ import {
     updateParticipant,
     deleteParticipant,
     changeStatusParticipant
-    } from '../../controller/admin/participantManagement/participantManagementController'
-import { checkJwt } from '../../utils/checkJwt'
+} from '../../controller/admin/participantManagement/participantManagementController'
+import { authMiddleware, onlyAdminMiddleware } from '../../middleware/authMiddleware'
 
 
 const router = Router()
 
-router.get('/get-all-participant', [checkJwt,getAllParticipant])
-router.get('/get-participant-by-id/:id', [checkJwt,getParticipanttById])
-router.get('/get-participant-by-training-id/:id', [checkJwt,getParticipantsByTrainingId])
-router.post('/create-participant', [checkJwt,createParticipant])
-router.put('/update-participant/:id', [checkJwt,updateParticipant])
-router.delete('/delete-participant/:id', [checkJwt,deleteParticipant])
-router.put('/change-status-participant/:id', [checkJwt,changeStatusParticipant])
+router.get('/get-all-participant', [authMiddleware, onlyAdminMiddleware,getAllParticipant])
+router.get('/get-participant-by-id/:id', [authMiddleware, getParticipanttById])
+router.get('/get-participant-by-training-id/:id', [authMiddleware, getParticipantsByTrainingId])
+router.post('/create-participant', [authMiddleware, onlyAdminMiddleware, createParticipant])
+router.put('/update-participant/:id', [authMiddleware, onlyAdminMiddleware, updateParticipant])
+router.delete('/delete-participant/:id', [authMiddleware, onlyAdminMiddleware, deleteParticipant])
+router.put('/change-status-participant/:id', [authMiddleware, onlyAdminMiddleware, changeStatusParticipant])
 
 
 

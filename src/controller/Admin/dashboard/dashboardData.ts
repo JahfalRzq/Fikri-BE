@@ -10,11 +10,6 @@ const userRepository = AppDataSource.getRepository(user);
 
 export const getDashboardData = async (req: Request, res: Response) => {
     try {
-        const userAccess = await userRepository.findOneBy({ id: req.jwtPayload.id });
-        if (!userAccess || userAccess.role !== UserRole.ADMIN) {
-            return res.status(403).send(errorResponse("Access Denied: Only ADMIN can access dashboard", 403));
-        }
-
         // Query untuk mendapatkan jumlah total peserta
         const totalParticipants = await participantRepository.count();
 

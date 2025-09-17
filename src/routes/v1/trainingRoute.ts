@@ -5,18 +5,17 @@ import {
     createTraining,
     updateTraining,
     deleteTraining
-
     } from '../../controller/admin/trainingManagement/trainingManagementController'
-import { checkJwt } from '../../utils/checkJwt'
+import { authMiddleware, onlyAdminMiddleware } from '../../middleware/authMiddleware'
 
 
 const router = Router()
 
-router.get('/get-all-training', [checkJwt,getAllTraining])
-router.get('/get-training-by-id/:id', [checkJwt,getTrainingtById])
-router.post('/create-training', [checkJwt,createTraining])
-router.put('/update-training/:id', [checkJwt,updateTraining])
-router.delete('/delete-training/:id', [checkJwt,deleteTraining])
+router.get('/get-all-training', [authMiddleware, onlyAdminMiddleware, getAllTraining])
+router.get('/get-training-by-id/:id', [authMiddleware, onlyAdminMiddleware, getTrainingtById])
+router.post('/create-training', [authMiddleware, onlyAdminMiddleware, createTraining])
+router.put('/update-training/:id', [authMiddleware, onlyAdminMiddleware, updateTraining])
+router.delete('/delete-training/:id', [authMiddleware, onlyAdminMiddleware, deleteTraining])
 
 
 export default router

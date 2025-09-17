@@ -6,9 +6,7 @@ dotenv.config()
 
 export const createJwtToken = (payload: JwtPayload): string => {
   const options: SignOptions = {
-    expiresIn: process.env.JWT_EXPIRATION ? 
-      parseInt(process.env.JWT_EXPIRATION) : 
-      2592000 // default 1 jam dalam detik
+    expiresIn: 60 * 60 * 24 // Default to 1 day
   }
 
   return jwt.sign(payload, process.env.JWT_SECRET!, options)
