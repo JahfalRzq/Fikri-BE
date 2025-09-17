@@ -5,6 +5,9 @@ import { errorResponse } from "@/utils/response";
 import { user } from "@/model/user";
 import { AppDataSource } from "@/data-source";
 import { UserRole } from "@/model/user";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const userRepository = AppDataSource.getRepository(user);
 

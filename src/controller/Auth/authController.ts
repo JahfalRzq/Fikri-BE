@@ -37,6 +37,7 @@ export const login = async (req: Request, res: Response) => {
         });
 
         if (!user) {
+            console.log("User not found:", userName);
             return res.status(401).send(errorResponse("Incorect username", 401));
         }
 

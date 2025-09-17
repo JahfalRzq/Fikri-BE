@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { AppDataSource } from "@/data-source";
 import { user, UserRole } from "@/model/user";
-import { errorResponse } from "@/utils/response";
+import { errorResponse, successResponse } from "@/utils/response";
 
 const userRepository = AppDataSource.getRepository(user);
 
