@@ -72,7 +72,6 @@ export class user {
   }
 
   public checkIfPasswordMatch(unencryptedPassword: string): boolean {
-    console.log("BALALALAAA", { password: this.password, unencryptedPassword, compare: bcrypt.compareSync(unencryptedPassword, this.password), newEncrypted: bcrypt.hashSync(unencryptedPassword, 8) });
 
     return bcrypt.compareSync(unencryptedPassword, this.password);
   }
