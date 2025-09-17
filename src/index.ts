@@ -4,22 +4,25 @@ import * as bodyParser from "body-parser";
 import { AppDataSource } from "./data-source";
 import router from "./routes/index";
 import path from "path";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 AppDataSource.initialize()
-  .then(() => {
-    const app = express();
-    app.use(
-      cors({
-        credentials: true,
-        origin: ["http://localhost:3000", "http://localhost:3001"],
-      }),
-    );
-    app.use(bodyParser.json({ limit: "1000mb" }));
-    app.use(bodyParser.urlencoded({ extended: true }));
-    app.use("/public", express.static(path.join(__dirname, "../public")));
-    app.use("/", router);
-    app.listen(process.env.APP_PORT, () => {
-      console.info(`Server running at port ${process.env.APP_PORT}`);
-    });
-  })
-  .catch((error) => console.error(error));
+    .then(() => {
+        const app = express();
+        app.use(
+            cors({
+                credentials: true,
+                origin: ["http://localhost:3000", "http://localhost:3001"],
+            }),
+        );
+        app.use(bodyParser.json({ limit: "1000mb" }));
+        app.use(bodyParser.urlencoded({ extended: true }));
+        app.use("/public", express.static(path.join(__dirname, "../public")));
+        app.use("/", router);
+        app.listen(process.env.APP_PORT, () => {
+            console.info(`Server running at port ${process.env.APP_PORT}`);
+        });
+    })
+    .catch((error) => console.error(error));
