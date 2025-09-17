@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { userSeeder } from "@/controller/seeder/userSeeder";
 import { trainingSeeder } from "@/controller/seeder/trainingSeeder";
+import { participantSeeder } from "@/controller/seeder/particpantSeeder";
 import {
   authMiddleware,
   onlyAdminMiddleware,
@@ -16,5 +17,10 @@ router.get("/trainingSeeder", [
     trainingSeeder
 ]);
 
+router.get("/participantSeeder", [
+    authMiddleware,
+    onlyAdminMiddleware,
+    participantSeeder
+]);
 
 export default router;
