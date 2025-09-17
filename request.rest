@@ -40,6 +40,17 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 ###
+PUT http://localhost:5000/api/v1/setting/edit-participant-profile/:id
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+###
+PUT http://localhost:5000/api/v1/setting/edit-admin-profile/:id
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
 GET http://localhost:5000/api/v1/dashboard/dashboard-data
 Content-Type: application/json
 Authorization: Bearer {{token}}

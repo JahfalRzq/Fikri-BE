@@ -4,6 +4,7 @@ import AuthRoute from "./authRoute";
 import TrainingRoute from "./trainingRoute";
 import ParticipantRoute from "./participantRoute";
 import DashboardData from "./dashboard";
+import setting from "./settingRoute"
 
 const router = Router();
 router.use("/seeder", SeederRoute);
@@ -11,5 +12,7 @@ router.use("/auth", AuthRoute);
 router.use("/training", TrainingRoute);
 router.use("/participant", ParticipantRoute);
 router.use("/dashboard", DashboardData);
+router.use("/setting", setting);
+
 
 export default router;
