@@ -1,80 +1,80 @@
-import { IsDate, isDate, IsNumber, IsOptional, IsString,IsUppercase } from "class-validator";
-import { Entity,PrimaryGeneratedColumn,Column,CreateDateColumn,UpdateDateColumn,DeleteDateColumn, OneToMany } from "typeorm";
+import { IsDate, IsNumber, IsOptional, IsString } from "class-validator";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+  OneToMany,
+} from "typeorm";
 import { participant } from "./participant";
-
 
 @Entity()
 export class training {
+  @PrimaryGeneratedColumn("uuid")
+  public id: string;
 
-    @PrimaryGeneratedColumn('uuid')
-    public id: string
-
-    
-    @Column({
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsString()
-    public trainingName: string
+    nullable: false,
+  })
+  @IsString()
+  public trainingName: string;
 
-    @Column({
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsString()
-    @IsOptional()
-    public category: string
+    nullable: false,
+  })
+  @IsString()
+  @IsOptional()
+  public category: string;
 
-    @Column({
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsString()
-    @IsOptional()
-    public trainingCode: string
+    nullable: false,
+  })
+  @IsString()
+  @IsOptional()
+  public trainingCode: string;
 
-    @Column({
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsString()
-    public coach: string
+    nullable: false,
+  })
+  @IsString()
+  public coach: string;
 
-    @Column({
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsNumber()
-    public price: Number
+    nullable: false,
+  })
+  @IsNumber()
+  public price: number;
 
-    @Column({
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsDate()
-    public startDateTraining: Date
+    nullable: false,
+  })
+  @IsDate()
+  public startDateTraining: Date;
 
-    @Column({
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsDate()
-    public endDateTraining: Date
+    nullable: false,
+  })
+  @IsDate()
+  public endDateTraining: Date;
 
-    
-    @CreateDateColumn()
-    public createdAt: Date
+  @CreateDateColumn()
+  public createdAt: Date;
 
-    @UpdateDateColumn()
-    public updatedAt: Date
+  @UpdateDateColumn()
+  public updatedAt: Date;
 
-    @DeleteDateColumn()
-    public deletedAt: Date
+  @DeleteDateColumn()
+  public deletedAt: Date;
 
-
-    
-    @OneToMany (() => participant, (participant) => participant.training)
-    public participant: participant[];
-    
-
+  @OneToMany(() => participant, (participant) => participant.training)
+  public participant: participant[];
 }

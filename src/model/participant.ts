@@ -1,111 +1,115 @@
-import { IsOptional, IsString,IsUppercase } from "class-validator";
-import { Entity,PrimaryGeneratedColumn,Column,CreateDateColumn,UpdateDateColumn,DeleteDateColumn, OneToMany, ManyToOne, JoinColumn } from "typeorm";
+import { IsOptional, IsString, IsUppercase } from "class-validator";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from "typeorm";
 import { user } from "./user";
 import { training } from "./training";
 
-export enum statusTraining{
-    selesai = 'selesai',
-    sedangBerlangsung = 'sedangBerlangsung',
-    tidakSelesai = 'tidakSelesai',
-    belumMulai = 'belumMulai',
-
+export enum statusTraining {
+  selesai = "selesai",
+  sedangBerlangsung = "sedangBerlangsung",
+  tidakSelesai = "tidakSelesai",
+  belumMulai = "belumMulai",
 }
 
 @Entity()
 export class participant {
+  @PrimaryGeneratedColumn("uuid")
+  public id: string;
 
-    @PrimaryGeneratedColumn('uuid')
-    public id: string
-
-    @Column({
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsString()
-    public email: string
+    nullable: false,
+  })
+  @IsString()
+  public email: string;
 
-    
-    @Column({
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsString()
-    public firstName: string
-        
-    @Column({
+    nullable: false,
+  })
+  @IsString()
+  public firstName: string;
+
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsString()
-    public lastName: string
+    nullable: false,
+  })
+  @IsString()
+  public lastName: string;
 
-    @Column({
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsString()
-    public company: string
+    nullable: false,
+  })
+  @IsString()
+  public company: string;
 
-    @Column({
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsString()
-    public companyAddress: string
+    nullable: false,
+  })
+  @IsString()
+  public companyAddress: string;
 
-    @Column({
+  @Column({
     default: null,
-    nullable: true
-    })
-    @IsString()
-    @IsOptional()
-    public phone: string
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  public phone: string;
 
-    @Column({
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsString()
-    public jobTitle: string
+    nullable: false,
+  })
+  @IsString()
+  public jobTitle: string;
 
-    @Column({
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsString()
-    public officePhone: string
+    nullable: false,
+  })
+  @IsString()
+  public officePhone: string;
 
-    @Column({
+  @Column({
     default: null,
-    nullable: false
-    })
-    @IsString()
-    public message: string
+    nullable: false,
+  })
+  @IsString()
+  public message: string;
 
-    
-    @Column({
-        type: 'enum',
-        enum: statusTraining,
-    })
-    @IsString()
-    @IsUppercase()
-    public status: statusTraining
+  @Column({
+    type: "enum",
+    enum: statusTraining,
+  })
+  @IsString()
+  @IsUppercase()
+  public status: statusTraining;
 
-    
-    @CreateDateColumn()
-    public createdAt: Date
+  @CreateDateColumn()
+  public createdAt: Date;
 
-    @UpdateDateColumn()
-    public updatedAt: Date
+  @UpdateDateColumn()
+  public updatedAt: Date;
 
-    @DeleteDateColumn()
-    public deletedAt: Date
+  @DeleteDateColumn()
+  public deletedAt: Date;
 
-    @OneToMany (() => user, (user) => user.participantId)
-    public user: user[];
+  @OneToMany(() => user, (user) => user.participantId)
+  public user: user[];
 
-    @ManyToOne (() => training, (training) => training.participant)
-    @JoinColumn()
-    public training : training
-
+  @ManyToOne(() => training, (training) => training.participant)
+  @JoinColumn()
+  public training: training;
 }

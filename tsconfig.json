@@ -13,6 +13,14 @@
        "sourceMap": true,
        "allowSyntheticDefaultImports": true,
        "esModuleInterop": true,
+       "strict": true,
+       "strictNullChecks": true,
+       "strictPropertyInitialization": false,
+       "skipLibCheck": true,
+       "baseUrl": "./src",
+       "paths": {
+         "@/*": ["*"]
+       },
        "typeRoots": ["./src/types", "./node_modules/@types"]
     }
   }

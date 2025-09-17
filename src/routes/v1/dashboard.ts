@@ -1,9 +1,16 @@
-import { Router } from 'express'
-import { getDashboardData } from '../../controller/admin/dashboard/dashboardData'
-import { authMiddleware, onlyAdminMiddleware } from '../../middleware/authMiddleware'
+import { Router } from "express";
+import { getDashboardData } from "@/controller/admin/dashboard/dashboardData";
+import {
+  authMiddleware,
+  onlyAdminMiddleware,
+} from "@/middleware/authMiddleware";
 
-const router = Router()
+const router = Router();
 
-router.get('/dashboard-data', [authMiddleware, onlyAdminMiddleware, getDashboardData])
+router.get("/dashboard-data", [
+  authMiddleware,
+  onlyAdminMiddleware,
+  getDashboardData,
+]);
 
-export default router
+export default router;

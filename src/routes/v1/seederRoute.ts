@@ -1,8 +1,8 @@
-import { Router } from 'express'
-import { userSeeder } from '../../controller/seeder/userSeeder'
+import { Router } from "express";
+import { userSeeder } from "@/controller/seeder/userSeeder";
 
-const router = Router()
+const router = Router();
 
-router.get('/userSeeder', userSeeder)
+router.get("/userSeeder", userSeeder);
 
-export default router
+export default router;

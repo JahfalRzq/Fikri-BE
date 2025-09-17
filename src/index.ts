@@ -1,21 +1,25 @@
-import express from "express"
-import cors from "cors"
-import * as bodyParser from "body-parser"
-import { AppDataSource } from "./data-source"
-import router from "./routes/index"
-import path = require("path")
+import express from "express";
+import cors from "cors";
+import * as bodyParser from "body-parser";
+import { AppDataSource } from "./data-source";
+import router from "./routes/index";
+import path from "path";
 
-
-AppDataSource.initialize().then(async () => {
-    const app = express()
-    app.use(cors({
+AppDataSource.initialize()
+  .then(() => {
+    const app = express();
+    app.use(
+      cors({
         credentials: true,
-        origin: ['http://localhost:3000', 'http://localhost:3001']
-}))
-    app.use(bodyParser.json({limit: '1000mb'}))
+        origin: ["http://localhost:3000", "http://localhost:3001"],
+      }),
+    );
+    app.use(bodyParser.json({ limit: "1000mb" }));
     app.use(bodyParser.urlencoded({ extended: true }));
-    app.use('/public', express.static(path.join(__dirname, '../public')));
-    app.use('/', router)
-    app.listen(process.env.APP_PORT, ()=> {console.log(`Server running at port ${process.env.APP_PORT}`)})
-
-}).catch(error => console.log(error))
+    app.use("/public", express.static(path.join(__dirname, "../public")));
+    app.use("/", router);
+    app.listen(process.env.APP_PORT, () => {
+      console.info(`Server running at port ${process.env.APP_PORT}`);
+    });
+  })
+  .catch((error) => console.error(error));
