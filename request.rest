@@ -44,11 +44,33 @@ PUT http://localhost:5000/api/v1/setting/edit-participant-profile/:id
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
+{
+  "email": "participant1@example.com",
+  "firstName": "Budi",
+  "lastName": "Santoso",
+  "company": "PT Teknologi Nusantara",
+  "companyAddress": "Jl. Merdeka No. 123, Jakarta",
+  "phone": "081234567890",
+  "jobTitle": "Software Engineer",
+  "officePhone": "021555666",
+  "message": "Saya ingin ikut training tambahan",
+  "status": "sedangBerlangsung"
+}
+
+
 
 ###
 PUT http://localhost:5000/api/v1/setting/edit-admin-profile/:id
 Content-Type: application/json
 Authorization: Bearer {{token}}
+{
+  "userName": "Admin Utama",
+  "email": "admin@example.com",
+  "phone": "081298765432",
+  "password": "AdminBaru!2025",
+  "image": "https://example.com/uploads/admin-profile.png"
+}
+
 
 ###
 GET http://localhost:5000/api/v1/dashboard/dashboard-data
