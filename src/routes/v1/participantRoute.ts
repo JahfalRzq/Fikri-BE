@@ -7,7 +7,7 @@ import {
   updateParticipant,
   deleteParticipant,
   changeStatusParticipant,
-} from "@/controller/admin/participantManagement/participantManagementController";
+} from "@/controller/Admin/participantManagement/participantManagementController";
 import {
   authMiddleware,
   onlyAdminMiddleware,
