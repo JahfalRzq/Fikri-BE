@@ -7,8 +7,12 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  JoinColumn,
+  ManyToOne,
 } from "typeorm";
 import { participant } from "./participant";
+import { categoryTraining } from "./categoryTraining";
+import { trainingCoach } from "./trainingCoach";
 
 @Entity()
 export class training {
@@ -77,4 +81,12 @@ export class training {
 
   @OneToMany(() => participant, (participant) => participant.training)
   public participant: participant[];
+
+  @ManyToOne(() => categoryTraining, (categoryTraining) => categoryTraining.training)
+  @JoinColumn()
+  public categoryTraining: categoryTraining;
+
+  @ManyToOne(() => trainingCoach, (trainingCoach) => trainingCoach.training)
+  @JoinColumn()
+  public trainingCoach: trainingCoach;
 }
