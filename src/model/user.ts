@@ -6,7 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
-  ManyToOne,
+  OneToMany,
   JoinColumn,
 } from "typeorm";
 import bcrypt from "bcryptjs";
@@ -76,7 +76,6 @@ export class user {
     return bcrypt.compareSync(unencryptedPassword, this.password);
   }
 
-  @ManyToOne(() => participant, (participantId) => participantId.user)
-  @JoinColumn({ name: "participant_id" })
+  @OneToMany(() => participant, (participantId) => participantId.user)
   public participantId: participant;
 }

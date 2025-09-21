@@ -12,6 +12,7 @@ import {
 } from "typeorm";
 import { user } from "./user";
 import { training } from "./training";
+import Joi from "joi";
 
 export enum statusTraining {
   selesai = "selesai",
@@ -106,8 +107,9 @@ export class participant {
   @DeleteDateColumn()
   public deletedAt: Date;
 
-  @OneToMany(() => user, (user) => user.participantId)
-  public user: user[];
+  @ManyToOne(() => user, (user) => user.participantId)
+  @JoinColumn()
+  public user: user;
 
   @ManyToOne(() => training, (training) => training.participant)
   @JoinColumn()
