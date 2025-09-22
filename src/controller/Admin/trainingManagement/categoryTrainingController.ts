@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
 import Joi from 'joi';
 import { AppDataSource } from '@/data-source';
-import { errorResponse, successResponse, validationResponse } from '@/utils/response';
+import { successResponse, validationResponse } from '@/utils/response';
 import { categoryTraining } from '@/model/categoryTraining';
-import { Like } from 'typeorm';
 
 const categoryTrainingRepository = AppDataSource.getRepository(categoryTraining);
 
