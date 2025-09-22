@@ -206,7 +206,7 @@ export const deleteUser = async (req: Request, res: Response) => {
 
         await userRepository.remove(user);
 
-        return res.status(201).send(successResponse('User created successfully', { data: user }, 201));
+        return res.status(201).send(successResponse('User deleted successfully', { data: user }, 201));
     } catch (error) {
         return res.status(500).json({
             message: error instanceof Error ? error.message : "Unknown error occurred",
