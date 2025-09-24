@@ -7,7 +7,9 @@ import Joi from "joi";
 import {
     successResponse,
     errorResponse,
+    validationResponse
 } from "@/utils/response";
+import bcrypt from "bcryptjs";
 
 const userRepository = AppDataSource.getRepository(user);
 
@@ -63,5 +65,40 @@ export const login = async (req: Request, res: Response) => {
             error instanceof Error ? error.message : 'Unknown error occurred',
             400
         ));
+    }
+};
+
+
+
+export const register = async (req: Request, res: Response) => {
+    try {
+        const { userName, password } = req.body;
+
+        // Validasi input
+        if (!userName || !password) {
+            return res.status(400).send(validationResponse('userName and password are required'));
+        }
+
+        // Periksa apakah email sudah digunakan
+        // const existingUser = await userRepository.findOne({ where: { email } });
+        // if (existingUser) {
+        //     return res.status(409).send(errorResponse('email already exists', 409));
+        // }
+
+        // Hash password sebelum menyimpan ke database
+        const hashedPassword = bcrypt.hashSync(password, 8);
+
+        // Buat objek pengguna baru
+        const newUser = new user();
+        newUser.userName = userName;
+        newUser.password = hashedPassword;
+
+        // Simpan pengguna ke database
+        await userRepository.save(newUser);
+
+        return res.status(201).send(successResponse('Registration successful', { data: newUser }, 201));
+    } catch (error) {
+        console.error('Error during registration:', error);
+        return res.status(500).send(errorResponse('Internal server error', 500));
     }
 };
