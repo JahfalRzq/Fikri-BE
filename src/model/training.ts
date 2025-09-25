@@ -33,22 +33,6 @@ export class training {
   @IsString()
   @IsOptional()
   public category: string;
-
-  @Column({
-    default: null,
-    nullable: false,
-  })
-  @IsString()
-  @IsOptional()
-  public trainingCode: string;
-
-  @Column({
-    default: null,
-    nullable: false,
-  })
-  @IsString()
-  public coach: string;
-
   @Column({
     default: null,
     nullable: false,

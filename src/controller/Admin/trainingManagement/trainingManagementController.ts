@@ -3,8 +3,12 @@ import { AppDataSource } from "@/data-source";
 import { training } from "@/model/training";
 import Joi from "joi";
 import { successResponse, validationResponse } from "@/utils/response";
+import { trainingCoach } from "@/model/trainingCoach";
+import { categoryTraining } from "@/model/categoryTraining";
 
 const trainingRepository = AppDataSource.getRepository(training);
+const trainingCoachRepository = AppDataSource.getRepository(trainingCoach);
+const categoryTrainingRepository = AppDataSource.getRepository(categoryTraining)
 
 export const getAllTraining = async (req: Request, res: Response) => {
   try {
@@ -164,11 +168,25 @@ export const createTraining = async (req: Request, res: Response) => {
       return res.status(422).send(validationResponse(schema));
     }
 
+    const trainingCategory = await categoryTrainingRepository.findOneBy({
+      id: body.training,
+    });
+    if (!trainingCategory) {
+      return res.status(404).json({ msg: "Training Not Found" });
+    }
+
+    const trainingCoach = await trainingCoachRepository.findOneBy({
+      id: body.coach,
+    });
+    if (!trainingCoach) {
+      return res.status(404).json({ msg: "Training Not Found" });
+    }
+
     const newTraining = new training();
     newTraining.trainingName = body.trainingName;
     newTraining.category = body.category;
-    newTraining.trainingCode = body.trainingCode;
-    newTraining.coach = body.coach;
+    newTraining.categoryTraining = trainingCategory;
+    newTraining.trainingCoach = trainingCoach;
     newTraining.price = body.price;
     newTraining.startDateTraining = body.startDateTraining;
     newTraining.endDateTraining = body.endDateTraining;
@@ -212,6 +230,20 @@ export const updateTraining = async (req: Request, res: Response) => {
       return res.status(422).send(validationResponse(schema));
     }
 
+    const trainingCategory = await categoryTrainingRepository.findOneBy({
+      id: body.training,
+    });
+    if (!trainingCategory) {
+      return res.status(404).json({ msg: "Training Not Found" });
+    }
+
+    const trainingCoach = await trainingCoachRepository.findOneBy({
+      id: body.coach,
+    });
+    if (!trainingCoach) {
+      return res.status(404).json({ msg: "Training Not Found" });
+    }
+
     const updateTraining = await trainingRepository.findOneBy({ id });
     if (!updateTraining) {
       return res.status(404).json({ msg: "Training Not Found" });
@@ -219,8 +251,8 @@ export const updateTraining = async (req: Request, res: Response) => {
 
     updateTraining.trainingName = body.trainingName;
     updateTraining.category = body.category;
-    updateTraining.trainingCode = body.trainingCode;
-    updateTraining.coach = body.coach;
+    updateTraining.categoryTraining = trainingCategory;
+    updateTraining.trainingCoach = trainingCoach;
     updateTraining.price = body.price;
     updateTraining.startDateTraining = body.startDateTraining;
     updateTraining.endDateTraining = body.endDateTraining;
