@@ -38,9 +38,7 @@ export const updateAdminProfile = async (req: Request, res: Response) => {
 
     const { email, userName, phone, password } = req.body;
 
-    adminUser.email = email ?? adminUser.email;
     adminUser.userName = userName ?? adminUser.userName;
-    adminUser.phone = phone ?? adminUser.phone;
 
     if (password) {
       adminUser.password = password;
@@ -127,9 +125,7 @@ export const updateParticipantProfile = async (req: Request, res: Response) => {
     await participantRepository.save(participantEntity);
 
     // Update user linked to participant
-    userAccess.email = participantEntity.email;
     userAccess.userName = participantEntity.firstName;
-    userAccess.phone = participantEntity.phone;
 
     if (password) {
       userAccess.password = password;

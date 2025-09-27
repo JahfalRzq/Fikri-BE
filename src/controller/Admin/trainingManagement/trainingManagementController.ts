@@ -14,8 +14,8 @@ export const getAllTraining = async (req: Request, res: Response) => {
   try {
     const {
       trainingName,
-      category,
-      trainingCode,
+      categoryId, // ganti filter pakai id dari categoryTraining
+      coachId,    // filter pakai id dari trainingCoach
       start_date,
       end_date,
       limit: queryLimit,
@@ -28,69 +28,88 @@ export const getAllTraining = async (req: Request, res: Response) => {
     if (start_date) {
       startDate = new Date(start_date as string);
       if (isNaN(startDate.getTime())) {
-        return res
-          .status(400)
-          .json({ msg: "Invalid start_date format. Expected YYYY-MM-DD." });
+        return res.status(400).json({
+          msg: "Invalid start_date format. Expected YYYY-MM-DD.",
+        });
       }
     }
 
     if (end_date) {
       endDate = new Date(end_date as string);
       if (isNaN(endDate.getTime())) {
-        return res
-          .status(400)
-          .json({ msg: "Invalid end_date format. Expected YYYY-MM-DD." });
+        return res.status(400).json({
+          msg: "Invalid end_date format. Expected YYYY-MM-DD.",
+        });
       }
     }
 
     const queryBuilder = trainingRepository
       .createQueryBuilder("training")
       .leftJoinAndSelect("training.participant", "participant")
+      .leftJoinAndSelect("training.categoryTraining", "categoryTraining")
+      .leftJoinAndSelect("training.trainingCoach", "trainingCoach")
       .orderBy("training.createdAt", "DESC");
 
+    // filter by training name
     if (trainingName) {
       queryBuilder.andWhere("training.trainingName LIKE :trainingName", {
         trainingName: `%${String(trainingName)}%`,
       });
     }
 
-    if (category) {
-      queryBuilder.andWhere("training.category LIKE :category", {
-        category: `%${String(category)}%`,
+    // filter by category id
+    if (categoryId) {
+      queryBuilder.andWhere("categoryTraining.id = :categoryId", {
+        categoryId: String(categoryId),
       });
     }
 
-    if (trainingCode) {
-      queryBuilder.andWhere("training.trainingCode LIKE :trainingCode", {
-        trainingCode: `%${String(trainingCode)}%`,
+    // filter by coach id
+    if (coachId) {
+      queryBuilder.andWhere("trainingCoach.id = :coachId", {
+        coachId: String(coachId),
       });
     }
 
-    // Apply date range filter if both start_date and end_date are provided
+    // filter date range
     if (startDate && endDate) {
       queryBuilder.andWhere(
         "training.startDateTraining >= :startDate AND training.startDateTraining <= :endDate",
-        {
-          startDate,
-          endDate,
-        },
+        { startDate, endDate }
       );
     }
 
-    const dynamicLimit = queryLimit ? parseInt(queryLimit as string) : null;
-    const currentPage = page ? parseInt(page as string) : 1; // Convert page to number, default to 1
-    const skip = (currentPage - 1) * (dynamicLimit ?? 0);
+    const dynamicLimit = queryLimit ? parseInt(queryLimit as string) : 10; // default 10
+    const currentPage = page ? parseInt(page as string) : 1;
+    const skip = (currentPage - 1) * dynamicLimit;
 
     const [rawData, totalCount] = await queryBuilder
       .skip(skip)
-      .take(dynamicLimit ?? undefined)
+      .take(dynamicLimit)
       .getManyAndCount();
 
-    // Transform data to include totalParticipants
+    // transform response
     const data = rawData.map((training) => ({
-      ...training,
-      totalParticipants: training.participant ? training.participant.length : 0,
-      participant: undefined, // Remove participant array from response
+      id: training.id,
+      trainingName: training.trainingName,
+      price: training.price,
+      startDateTraining: training.startDateTraining,
+      endDateTraining: training.endDateTraining,
+      category: training.categoryTraining
+        ? {
+            id: training.categoryTraining.id,
+            name: training.categoryTraining.categoryName,
+          }
+        : null,
+      coach: training.trainingCoach
+        ? {
+            id: training.trainingCoach.id,
+            name: training.trainingCoach.coachName,
+          }
+        : null,
+      totalParticipants: training.participant
+        ? training.participant.length
+        : 0,
     }));
 
     return res.status(200).send(
@@ -100,10 +119,10 @@ export const getAllTraining = async (req: Request, res: Response) => {
           data,
           totalCount,
           currentPage,
-          totalPages: Math.ceil(totalCount / (dynamicLimit ?? 1)),
+          totalPages: Math.ceil(totalCount / dynamicLimit),
         },
-        200,
-      ),
+        200
+      )
     );
   } catch (error) {
     return res.status(500).json({
@@ -113,6 +132,7 @@ export const getAllTraining = async (req: Request, res: Response) => {
   }
 };
 
+
 export const getTrainingtById = async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
@@ -120,35 +140,53 @@ export const getTrainingtById = async (req: Request, res: Response) => {
     const result = await trainingRepository
       .createQueryBuilder("training")
       .leftJoinAndSelect("training.participant", "participant")
+      .leftJoinAndSelect("training.categoryTraining", "categoryTraining")
+      .leftJoinAndSelect("training.trainingCoach", "trainingCoach")
       .where("training.id = :id", { id })
       .getOne();
 
-    if (!result) return res.status(404).json({ msg: "Training Not Found" });
+    if (!result) {
+      return res.status(404).json({ msg: "Training Not Found" });
+    }
 
-    // Transform data to include totalParticipants
-    const trainingWithParticipants = {
-      ...result,
-      participants: result.participant || [],
+    // Transformasi data agar lebih rapih
+    const trainingDetail = {
+      id: result.id,
+      trainingName: result.trainingName,
+      price: result.price,
+      startDateTraining: result.startDateTraining,
+      endDateTraining: result.endDateTraining,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+
+      category: result.categoryTraining
+        ? {
+            id: result.categoryTraining.id,
+            name: result.categoryTraining.categoryName,
+          }
+        : null,
+
+      coach: result.trainingCoach
+        ? {
+            id: result.trainingCoach.id,
+            name: result.trainingCoach.coachName,
+          }
+        : null,
+
       totalParticipants: result.participant ? result.participant.length : 0,
-      participant: undefined, // Remove the original participant property
+      participants: result.participant || [],
     };
 
-    return res
-      .status(200)
-      .send(
-        successResponse(
-          "Get Training by ID Success",
-          { data: trainingWithParticipants },
-          200,
-        ),
-      );
+    return res.status(200).send(
+      successResponse("Get Training by ID Success", { data: trainingDetail }, 200)
+    );
   } catch (error) {
     return res.status(500).json({
-      message:
-        error instanceof Error ? error.message : "Unknown error occurred",
+      message: error instanceof Error ? error.message : "Unknown error occurred",
     });
   }
 };
+
 
 export const createTraining = async (req: Request, res: Response) => {
   const createTrainingSchema = (input: any) =>

@@ -50,7 +50,6 @@ export const login = async (req: Request, res: Response) => {
         const jwtPayload: JwtPayload = {
             id: user.id,
             userName: user.userName,
-            email: user.email,
             createdAt: user.createdAt,
         };
 

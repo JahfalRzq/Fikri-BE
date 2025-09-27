@@ -1,4 +1,5 @@
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjBiNzQwZTU5LTYzYWQtNGVkYy1hNWE2LTc1MzczNzE0MGE5ZCIsInVzZXJOYW1lIjoiQWRtaW4xIiwiZW1haWwiOiIiLCJjcmVhdGVkQXQiOiIyMDI1LTA5LTEyVDA3OjA1OjI5LjMyM1oiLCJpYXQiOjE3NTgxMTY0ODgsImV4cCI6MTc1ODIwMjg4OH0.eeqK7J-u869wS3O-qsbUpuDVrGnkhVZ1t72jnnQYixc
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImQ1MjVlMWQ0LTgyYzgtNDNiNy1hNDQ4LWE4NDIyMTQ2OWRjZCIsInVzZXJOYW1lIjoiQWRtaW4xIiwiZW1haWwiOiIiLCJjcmVhdGVkQXQiOiIyMDI1LTA5LTI3VDEzOjAwOjMwLjE3MloiLCJpYXQiOjE3NTg5NzgwNTIsImV4cCI6MTc1OTA2NDQ1Mn0.TKOSi5isRaEhzz6HmNepXO-xK85Fmtt5IM21N2OYt_M
+
 
 
 ###
@@ -77,6 +78,146 @@ GET http://localhost:5000/api/v1/dashboard/dashboard-data
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
+###
+GET  http://localhost:5000/api/v1/user-management/get-all-user
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+###
+GET  http://localhost:5000/api/v1/user-management/get-user-by-id/4dfb572b-11c4-440e-a74f-adf482455fa5
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+
+
+###
+POST  http://localhost:5000/api/v1/user-management/create-user
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{     
+    "username"  : "TestParticipant",
+    "password"  : "Participant123!",
+    "role"      : "PARTICIPANT",
+    "phone"     : "00000000",
+    "email"     : "Participant@gmail.com"
+
+}
+
+###
+PUT  http://localhost:5000/api/v1/user-management/update-user/4dfb572b-11c4-440e-a74f-adf482455fa5
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+{     
+    "username"    : "TESTAdmin1Update",
+    "password"    : "Admin1!Update",
+    "role"    : "ADMIN",
+    "phone"    : "11111111",
+    "email"    : "TESTAdmin1Update@gmail.com"
+
+}
+
+
+###
+DELETE  http://localhost:5000/api/v1/user-management/delete-user/4dfb572b-11c4-440e-a74f-adf482455fa5
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+
+
+
+
+
+
+
+###
+GET  http://localhost:5000/api/v1/training-coach/get-all-training-coach
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+###
+GET  http://localhost:5000/api/v1/training-coach/get-training-coach-by-id/d9564180-3b30-4651-aa73-99efe342e12d
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+
+
+###
+POST  http://localhost:5000/api/v1/training-coach/create-training-coach
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{     "coachName"    : "Jafal"
+}
+
+###
+PUT  http://localhost:5000/api/v1/training-coach/update-training-coach/d9564180-3b30-4651-aa73-99efe342e12d
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{     "coachName"    : "Update Jafal"
+}
+
+
+###
+DELETE  http://localhost:5000/api/v1/training-coach/delete-training-coach/d9564180-3b30-4651-aa73-99efe342e12d
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+
+###
+GET  http://localhost:5000/api/v1/training-category/get-all-training-category
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+###
+GET  http://localhost:5000/api/v1/training-category/get-training-category-by-id/7337b57e-6e12-4386-844d-7975dd70c03a
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+
+
+###
+POST  http://localhost:5000/api/v1/training-category/create-training-category
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{     
+    "categoryName"    : "MANTA2",
+    "trainingCode"    : "MANTA-002"
+
+}
+
+###
+PUT  http://localhost:5000/api/v1/training-category/update-training-category/7337b57e-6e12-4386-844d-7975dd70c03a
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{     
+    "categoryName"    : "Update Manta",
+    "trainingCode"    : "MANTA-003"
+}
+
+
+###
+DELETE  http://localhost:5000/api/v1/training-category/delete-training-category/7337b57e-6e12-4386-844d-7975dd70c03a
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+
+
+
 
 //Training endpoint
 ###
@@ -86,7 +227,7 @@ Authorization: Bearer {{token}}
 
 
 ###
-GET  http://localhost:5000/api/v1/training/get-training-by-id/c3a81e76-051e-4b56-81e1-9fd508df6533
+GET  http://localhost:5000/api/v1/training/get-training-by-id/bf6dd6cf-c2e8-428b-91e9-660da199c395
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -99,9 +240,9 @@ Authorization: Bearer {{token}}
 
 {
     "trainingName": "Advanced Type Script 2",
-    "category": "Programming2",
+    "category": "827b19d6-51ba-49af-9864-099b63fa6ccd",
     "trainingCode": "TS201",
-    "coach": "John Doe",
+    "coach": "08e7edf5-28f5-433b-a21f-52fb8a7803b5",
     "price": 20000,
     "startDateTraining": "2023-11-01",
     "endDateTraining": "2023-11-10"
@@ -109,15 +250,15 @@ Authorization: Bearer {{token}}
 
 
 ###
-PUT  http://localhost:5000/api/v1/training/update-training/c3a81e76-051e-4b56-81e1-9fd508df6533
+PUT  http://localhost:5000/api/v1/training/update-training/bf6dd6cf-c2e8-428b-91e9-660da199c395
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
     "trainingName": "update Advanced JavaScript",
-    "category": "update Programming",
+    "category": "827b19d6-51ba-49af-9864-099b63fa6ccd",
     "trainingCode": "update JS201",
-    "coach": "update Jane Smith",
+    "coach": "08e7edf5-28f5-433b-a21f-52fb8a7803b5",
     "price": 300,
     "startDateTraining": "2025-11-01",
     "endDateTraining": "2025-11-10"
@@ -127,7 +268,7 @@ Authorization: Bearer {{token}}
 
 
 ###
-DELETE   http://localhost:5000/api/v1/training/delete-training/c3a81e76-051e-4b56-81e1-9fd508df6533
+DELETE   http://localhost:5000/api/v1/training/delete-training/c6d43ea7-7c90-4b8c-b8ea-de82c3a5970d
 Content-Type: application/json
 Authorization: Bearer {{token}}
 

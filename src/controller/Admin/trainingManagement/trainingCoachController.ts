@@ -133,6 +133,49 @@ export const createTrainingCoach = async (req: Request, res: Response) => {
     }
 };
 
+export const updateTrainingCoach = async (req: Request, res: Response) => {
+  const updateTrainingCoachSchema = (input: any) =>
+    Joi.object({
+      coachName: Joi.string().optional(),
+    }).validate(input);
+
+  try {
+    const { id } = req.params;
+    const body = req.body;
+    const schema = updateTrainingCoachSchema(body);
+
+    if ("error" in schema) {
+      return res.status(422).send(validationResponse(schema));
+    }
+
+    // Cari coach berdasarkan ID
+    const existingCoach = await trainingCoachRepository.findOneBy({ id });
+    if (!existingCoach) {
+      return res.status(404).json({ msg: "Training Coach not found" });
+    }
+
+    // Update field yang ada
+    if (body.coachName) existingCoach.coachName = body.coachName;
+
+    await trainingCoachRepository.save(existingCoach);
+
+    return res
+      .status(200)
+      .send(
+        successResponse(
+          "Training Coach updated successfully",
+          { updatedCoach: existingCoach },
+          200
+        )
+      );
+  } catch (error) {
+    return res.status(500).json({
+      message:
+        error instanceof Error ? error.message : "Unknown error occurred",
+    });
+  }
+};
+
 
 export const deleteTrainingCoach = async (req: Request, res: Response) => {
     const { id } = req.params;

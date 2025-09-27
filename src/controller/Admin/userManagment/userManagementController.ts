@@ -50,14 +50,15 @@ export const getAllUsers = async (req: Request, res: Response) => {
             });
         }
 
-        const dynamicLimit = queryLimit ? parseInt(queryLimit as string) : null;
-        const currentPage = page ? parseInt(page as string) : 1; // Convert page to number, default to 1
-        const skip = (currentPage - 1) * (dynamicLimit ?? 0);
+        const dynamicLimit = queryLimit ? parseInt(queryLimit as string) : 10; // default 10
+        const currentPage = page ? parseInt(page as string) : 1;
+        const skip = (currentPage - 1) * dynamicLimit;
 
         const [rawData, totalCount] = await queryBuilder
             .skip(skip)
-            .take(dynamicLimit ?? undefined)
+            .take(dynamicLimit)
             .getManyAndCount();
+
 
         // Transform data to include totalTrainings
         const data = rawData.map((user) => ({
@@ -110,7 +111,6 @@ export const createUser = async (req: Request, res: Response) => {
             password: Joi.string().min(6).required(),
             role: Joi.string().valid(...Object.values(UserRole)).required(),
             phone: Joi.string().required(),
-            email: Joi.string().email().required(),
         }).validate(input);
 
     try {
@@ -120,20 +120,15 @@ export const createUser = async (req: Request, res: Response) => {
             return res.status(422).send(validationResponse(schema));
         }
 
-        const { email, password, role, username, phone } = body;
+        const { password, role, username, phone } = body;
 
         // Cek apakah email sudah terdaftar
-        const existingUser = await userRepository.findOneBy({ email });
-        if (existingUser) {
-            return res.status(400).send(validationResponse('email already used'));
-        }
+
 
         const newUser = new user(); // Pastikan nama kelasnya sesuai dengan definisi Anda
-        newUser.email = email;
         newUser.userName = username; // Perbaiki properti ini jika tidak sesuai dengan definisi kelas User
         newUser.password = bcrypt.hashSync(password, 8);
         newUser.role = role;
-        newUser.phone = phone;
         console.log("create user", newUser);
         await userRepository.save(newUser);
 
@@ -168,11 +163,9 @@ export const updateUser = async (req: Request, res: Response) => {
             return res.status(404).json({ msg: "Training Not Found" });
         }
 
-        updateUser.email = body.email;
         updateUser.userName = body.username; // Perbaiki properti ini jika tidak sesuai dengan definisi kelas User
         updateUser.password = bcrypt.hashSync(body.password, 8);
         updateUser.role = body.role;
-        updateUser.phone = body.phone;
         console.log("create user", updateUser);
 
         await userRepository.save(updateUser);

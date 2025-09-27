@@ -3,6 +3,7 @@ import {
     getAllTrainingCoaches,
     getTrainingCoachById,
     createTrainingCoach,
+    updateTrainingCoach,
     deleteTrainingCoach
  } from "@/controller/admin/trainingManagement/trainingCoachController";
 
@@ -29,11 +30,11 @@ router.post("/create-training-coach", [
   onlyAdminMiddleware,
   createTrainingCoach,
 ]);
-// router.put("/update-training-coach/:id", [
-//   authMiddleware,
-//   onlyAdminMiddleware,
-//   updateTraining,
-// ]);
+router.put("/update-training-coach/:id", [
+  authMiddleware,
+  onlyAdminMiddleware,
+  updateTrainingCoach,
+]);
 router.delete("/delete-training-coach/:id", [
   authMiddleware,
   onlyAdminMiddleware,

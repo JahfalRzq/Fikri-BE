@@ -7,13 +7,14 @@ import DashboardData from "./dashboard";
 import setting from "./settingRoute"
 import TrainingCoachRoute from "./trainingCoachRoute";
 import TrainingCategoryRoute from "./trainingCategoryRoute";
-
+import UserManagementRoute from "./userManagementRoute"
 
 
 const router = Router();
 router.use("/seeder", SeederRoute);
 router.use("/auth", AuthRoute);
 router.use("/training", TrainingRoute);
+router.use("/user-management", UserManagementRoute);
 router.use("/participant", ParticipantRoute);
 router.use("/dashboard", DashboardData);
 router.use("/setting", setting);

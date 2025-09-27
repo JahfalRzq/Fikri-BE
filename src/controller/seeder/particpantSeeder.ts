@@ -66,9 +66,7 @@ export const participantSeeder = async (req: Request, res: Response) => {
       await participantRepository.save(newParticipant);
 
       const newUser = new user();
-      newUser.email = newParticipant.email;
       newUser.userName = newParticipant.firstName;
-      newUser.phone = newParticipant.phone;
       newUser.password = newParticipant.firstName + "123)(*";
       newUser.hashPassword();
       newUser.role = UserRole.PARTICIPANT;

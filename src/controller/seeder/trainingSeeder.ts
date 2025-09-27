@@ -10,8 +10,8 @@ export const trainingSeeder = async (req: Request, res: Response) => {
     {
       trainingName: "Leadership Essentials",
       category: "Business & Management",
-      trainingCode: "TRN-001",
-      coach: "John Doe",
+      // trainingCode: "TRN-001",
+      // coach: "John Doe",
       price: 2500000,
       startDateTraining: new Date("2025-10-01"),
       endDateTraining: new Date("2025-10-05"),
@@ -19,8 +19,8 @@ export const trainingSeeder = async (req: Request, res: Response) => {
     {
       trainingName: "Advanced JavaScript",
       category: "IT & Programming",
-      trainingCode: "TRN-002",
-      coach: "Jane Smith",
+      // trainingCode: "TRN-002",
+      // coach: "Jane Smith",
       price: 3000000,
       startDateTraining: new Date("2025-11-10"),
       endDateTraining: new Date("2025-11-15"),
@@ -41,8 +41,8 @@ export const trainingSeeder = async (req: Request, res: Response) => {
       const newTraining = trainingRepository.create({
         trainingName: data.trainingName,
         category: data.category,
-        trainingCode: data.trainingCode,
-        coach: data.coach,
+        // trainingCode: data.trainingCode,
+        // coach: data.coach,
         price: data.price,
         startDateTraining: data.startDateTraining,
         endDateTraining: data.endDateTraining,
@@ -66,3 +66,4 @@ export const trainingSeeder = async (req: Request, res: Response) => {
       );
   }
 };
+

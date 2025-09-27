@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
   getAllParticipant,
-  getParticipanttById,
+  getParticipantById,
   getParticipantsByTrainingId,
   createParticipant,
   updateParticipant,
@@ -20,7 +20,10 @@ router.get("/get-all-participant", [
   onlyAdminMiddleware,
   getAllParticipant,
 ]);
-router.get("/get-participant-by-id/:id", [authMiddleware, getParticipanttById]);
+router.get("/get-participant-by-id/:id", [
+  authMiddleware, 
+  getParticipantById
+]);
 router.get("/get-participant-by-training-id/:id", [
   authMiddleware,
   getParticipantsByTrainingId,

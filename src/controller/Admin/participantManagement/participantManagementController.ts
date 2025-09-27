@@ -14,50 +14,52 @@ const trainingRepository = AppDataSource.getRepository(training);
 const userRepository = AppDataSource.getRepository(user);
 const participantRepository = AppDataSource.getRepository(participant);
 
-export const getParticipantsByTrainingId = async (
-  req: Request,
-  res: Response,
-) => {
+export const getParticipantsByTrainingId = async (req: Request, res: Response) => {
   try {
     const trainingId = req.params.id;
 
-    // ambil query params untuk pagination & search
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+    // query params untuk pagination & search
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
     const search = (req.query.search as string) || "";
 
     const skip = (page - 1) * limit;
 
-    // buat kondisi pencarian
-    const whereCondition: any = {
-      training: { id: trainingId },
-    };
-
-    if (search) {
-      whereCondition["email"] = Like(`%${search}%`);
-      // atau multi field:
-      // pake queryBuilder lebih fleksibel (lihat bawah)
-    }
-
-    // jika mau multi-field search lebih baik pakai queryBuilder
     const queryBuilder = participantRepository
       .createQueryBuilder("participant")
       .leftJoinAndSelect("participant.training", "training")
+      .leftJoinAndSelect("participant.user", "user") // ikutkan relasi user
       .where("training.id = :trainingId", { trainingId });
 
+    // filter pencarian (multi-field)
     if (search) {
       queryBuilder.andWhere(
-        "(participant.firstName LIKE :search OR participant.lastName LIKE :search OR participant.email LIKE :search)",
+        `(participant.firstName LIKE :search 
+          OR participant.lastName LIKE :search 
+          OR participant.email LIKE :search 
+          OR user.userName LIKE :search 
+          OR user.email LIKE :search)`,
         { search: `%${search}%` },
       );
     }
 
-    queryBuilder
-      .skip(skip)
-      .take(limit)
-      .orderBy("participant.createdAt", "DESC");
+    // pagination & order
+    queryBuilder.skip(skip).take(limit).orderBy("participant.createdAt", "DESC");
 
     const [participants, totalCount] = await queryBuilder.getManyAndCount();
+
+    // transform data -> tambahkan info user tanpa expose password
+    const safeData = participants.map((p) => ({
+      ...p,
+      user: p.user
+        ? {
+            id: p.user.id,
+            userName: p.user.userName,
+            role: p.user.role,
+            image: p.user.image,
+          }
+        : null,
+    }));
 
     const totalPages = Math.ceil(totalCount / limit);
 
@@ -65,7 +67,7 @@ export const getParticipantsByTrainingId = async (
       successResponse(
         "Get Participants by Training ID Success",
         {
-          data: participants,
+          data: safeData,
           totalCount,
           currentPage: page,
           totalPages,
@@ -74,9 +76,12 @@ export const getParticipantsByTrainingId = async (
       ),
     );
   } catch (error: any) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({
+      message: error instanceof Error ? error.message : "Unknown error occurred",
+    });
   }
 };
+
 
 export const getAllParticipant = async (req: Request, res: Response) => {
   try {
@@ -86,6 +91,7 @@ export const getAllParticipant = async (req: Request, res: Response) => {
       trainingCode,
       startDateTraining,
       endDateTraining,
+      search,
       limit: queryLimit,
       page,
     } = req.query;
@@ -114,6 +120,7 @@ export const getAllParticipant = async (req: Request, res: Response) => {
     const queryBuilder = participantRepository
       .createQueryBuilder("participant")
       .leftJoinAndSelect("participant.training", "training")
+      .leftJoinAndSelect("participant.user", "user")
       .orderBy("participant.createdAt", "DESC");
 
     if (firstName) {
@@ -134,6 +141,18 @@ export const getAllParticipant = async (req: Request, res: Response) => {
       });
     }
 
+    // multi-field search
+    if (search) {
+      queryBuilder.andWhere(
+        `(participant.firstName LIKE :search 
+          OR participant.lastName LIKE :search 
+          OR participant.email LIKE :search 
+          OR user.userName LIKE :search 
+          OR user.email LIKE :search)`,
+        { search: `%${search}%` },
+      );
+    }
+
     // Apply date range filter if both startDateTraining and endDateTraining are provided
     if (startDate && endDate) {
       queryBuilder.andWhere(
@@ -145,20 +164,33 @@ export const getAllParticipant = async (req: Request, res: Response) => {
       );
     }
 
-    const dynamicLimit = queryLimit ? parseInt(queryLimit as string) : null;
-    const currentPage = page ? parseInt(page as string) : 1; // Convert page to number, default to 1
+    const dynamicLimit = queryLimit ? parseInt(queryLimit as string, 10) : null;
+    const currentPage = page ? parseInt(page as string, 10) : 1;
     const skip = (currentPage - 1) * (dynamicLimit || 0);
 
-    const [data, totalCount] = await queryBuilder
+    const [participants, totalCount] = await queryBuilder
       .skip(skip)
       .take(dynamicLimit || undefined)
       .getManyAndCount();
+
+    // transform: hilangkan password user
+    const safeData = participants.map((p) => ({
+      ...p,
+      user: p.user
+        ? {
+            id: p.user.id,
+            userName: p.user.userName,
+            role: p.user.role,
+            image: p.user.image,
+          }
+        : null,
+    }));
 
     return res.status(200).send(
       successResponse(
         "Get Participant Success",
         {
-          data,
+          data: safeData,
           totalCount,
           currentPage,
           totalPages: Math.ceil(totalCount / (dynamicLimit || 1)),
@@ -167,26 +199,58 @@ export const getAllParticipant = async (req: Request, res: Response) => {
       ),
     );
   } catch (error) {
-    return res.status(500).json({ message: error instanceof Error ? error.message : 'Unknown error occurred' });
-  }
-};
-
-export const getParticipanttById = async (req: Request, res: Response) => {
-  try {
-    const id = req.params.id;
-    const result = await participantRepository.findOneBy({ id });
-    if (!result) return res.status(404).json({ msg: "Participant Not Found" });
-    return res
-      .status(200)
-      .send(
-        successResponse("Get Participant by ID Success", { data: result }, 200),
-      );
-  } catch (error) {
-    return res.status(500).json({ 
-      message: error instanceof Error ? error.message : 'Unknown error occurred' 
+    return res.status(500).json({
+      message: error instanceof Error ? error.message : "Unknown error occurred",
     });
   }
 };
+
+
+export const getParticipantById = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+
+    const result = await participantRepository
+      .createQueryBuilder("participant")
+      .leftJoinAndSelect("participant.training", "training")
+      .leftJoinAndSelect("participant.user", "user")
+      .where("participant.id = :id", { id })
+      .getOne();
+
+    if (!result) {
+      return res.status(404).json({ msg: "Participant Not Found" });
+    }
+
+    // transform data agar password user tidak ikut ke response
+    const safeParticipant = {
+      ...result,
+      user: result.user
+        ? {
+            id: result.user.id,
+            userName: result.user.userName,
+            role: result.user.role,
+            image: result.user.image,
+          }
+        : null,
+    };
+
+    return res
+      .status(200)
+      .send(
+        successResponse(
+          "Get Participant by ID Success",
+          { data: safeParticipant },
+          200,
+        ),
+      );
+  } catch (error) {
+    return res.status(500).json({
+      message:
+        error instanceof Error ? error.message : "Unknown error occurred",
+    });
+  }
+};
+
 
 export const createParticipant = async (req: Request, res: Response) => {
   const createParticipantSchema = (input: any) =>
@@ -201,6 +265,7 @@ export const createParticipant = async (req: Request, res: Response) => {
       officePhone: Joi.number().min(0).required(),
       message: Joi.string().required(),
       training: Joi.string().required(),
+      user: Joi.string().required(),
     }).validate(input);
 
   try {
@@ -210,11 +275,19 @@ export const createParticipant = async (req: Request, res: Response) => {
       return res.status(422).send(validationResponse(schema));
     }
 
-    const trainingType = await trainingRepository.findOneBy({
+    const trainingId = await trainingRepository.findOneBy({
       id: body.training,
     });
-    if (!trainingType) {
+    if (!trainingId) {
       return res.status(404).json({ msg: "Training Not Found" });
+    }
+
+
+    const userId = await userRepository.findOneBy({
+      id: body.userId,
+    });
+    if (!userId) {
+      return res.status(404).json({ msg: "User Not Found" });
     }
 
     const newParticipant = new participant();
@@ -228,33 +301,23 @@ export const createParticipant = async (req: Request, res: Response) => {
     newParticipant.officePhone = body.officePhone;
     newParticipant.message = body.message;
     newParticipant.status = statusTraining.belumMulai;
-    newParticipant.training = trainingType;
+    newParticipant.training = trainingId;
+    newParticipant.user = userId
 
     await participantRepository.save(newParticipant);
-
-    const newUser = new user();
-    newUser.email = newParticipant.email;
-    newUser.userName = newParticipant.firstName;
-    newUser.phone = newParticipant.phone;
-    newUser.password = newParticipant.firstName + `${"123)(*"}`;
-    newUser.hashPassword();
-    newUser.role = UserRole.PARTICIPANT;
-    newUser.participantId = newParticipant; // Gunakan entitas newParticipant langsung
-
-    await userRepository.save(newUser);
 
     return res
       .status(201)
       .send(
         successResponse(
           "Participant created successfully",
-          { data: newParticipant, user: newUser },
+          { data: newParticipant },
           201,
         ),
       );
   } catch (error) {
-    return res.status(500).json({ 
-      message: error instanceof Error ? error.message : 'Unknown error occurred' 
+    return res.status(500).json({
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
     });
   }
 };
@@ -274,6 +337,8 @@ export const updateParticipant = async (req: Request, res: Response) => {
       status: Joi.string()
         .valid(...Object.values(statusTraining))
         .optional(),
+      training: Joi.string().required(),
+      user: Joi.string().required(),
     }).validate(input);
 
   try {
@@ -283,6 +348,21 @@ export const updateParticipant = async (req: Request, res: Response) => {
 
     if ("error" in schema) {
       return res.status(422).send(validationResponse(schema));
+    }
+
+    const trainingId = await trainingRepository.findOneBy({
+      id: body.training,
+    });
+    if (!trainingId) {
+      return res.status(404).json({ msg: "Training Not Found" });
+    }
+
+
+    const userId = await userRepository.findOneBy({
+      id: body.userId,
+    });
+    if (!userId) {
+      return res.status(404).json({ msg: "User Not Found" });
     }
 
     const existingParticipant = await participantRepository.findOneBy({ id });
@@ -301,22 +381,10 @@ export const updateParticipant = async (req: Request, res: Response) => {
     existingParticipant.officePhone = body.officePhone;
     existingParticipant.message = body.message;
     existingParticipant.status = body.status;
+    existingParticipant.training = trainingId
+    existingParticipant.user = userId
 
     await participantRepository.save(existingParticipant);
-
-    // Update user details associated with the participant
-    const userParticipant = await userRepository.findOneBy({
-      participantId: { id: existingParticipant.id },
-    });
-    
-    if (userParticipant) {
-      userParticipant.email = existingParticipant.email;
-      userParticipant.userName = existingParticipant.firstName;
-      userParticipant.phone = existingParticipant.phone;
-      userParticipant.hashPassword();
-      userParticipant.role = UserRole.PARTICIPANT;
-      await userRepository.save(userParticipant);
-    }
 
     return res
       .status(200)
@@ -328,8 +396,8 @@ export const updateParticipant = async (req: Request, res: Response) => {
         ),
       );
   } catch (error) {
-    return res.status(500).json({ 
-      message: error instanceof Error ? error.message : 'Unknown error occurred' 
+    return res.status(500).json({
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
     });
   }
 };
@@ -341,14 +409,6 @@ export const deleteParticipant = async (req: Request, res: Response) => {
     const participantToDelete = await participantRepository.findOneBy({ id });
     if (!participantToDelete) {
       return res.status(404).json({ msg: "Participant not Found" });
-    }
-
-    // Hapus pengguna yang terkait dengan peserta
-    const userParticipant = await userRepository.findOneBy({
-      participantId: { id: participantToDelete.id },
-    });
-    if (userParticipant) {
-      await userRepository.remove(userParticipant);
     }
 
     // Hapus peserta dari database
@@ -364,8 +424,8 @@ export const deleteParticipant = async (req: Request, res: Response) => {
         ),
       );
   } catch (error) {
-    return res.status(500).json({ 
-      message: error instanceof Error ? error.message : 'Unknown error occurred' 
+    return res.status(500).json({
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
     });
   }
 };
@@ -407,8 +467,8 @@ export const changeStatusParticipant = async (req: Request, res: Response) => {
         ),
       );
   } catch (error) {
-    return res.status(500).json({ 
-      message: error instanceof Error ? error.message : 'Unknown error occurred' 
+    return res.status(500).json({
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
     });
   }
 };

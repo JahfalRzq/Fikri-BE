@@ -26,22 +26,11 @@ export class user {
   @IsString()
   public userName: string;
 
-  @Column({
-    default: null,
-    nullable: false,
-  })
-  @IsString()
-  @IsOptional()
-  public phone: string;
-
   @Column()
   @IsString()
   @IsOptional()
   public password: string;
 
-  @Column()
-  @IsString()
-  public email: string;
 
   @Column({
     type: "enum",
