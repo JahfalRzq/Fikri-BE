@@ -337,8 +337,8 @@ export const updateParticipant = async (req: Request, res: Response) => {
       status: Joi.string()
         .valid(...Object.values(statusTraining))
         .optional(),
-      training: Joi.string().required(),
-      user: Joi.string().required(),
+      training: Joi.string().optional(),
+      user: Joi.string().optional(),
     }).validate(input);
 
   try {

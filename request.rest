@@ -1,5 +1,4 @@
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImQ1MjVlMWQ0LTgyYzgtNDNiNy1hNDQ4LWE4NDIyMTQ2OWRjZCIsInVzZXJOYW1lIjoiQWRtaW4xIiwiZW1haWwiOiIiLCJjcmVhdGVkQXQiOiIyMDI1LTA5LTI3VDEzOjAwOjMwLjE3MloiLCJpYXQiOjE3NTg5NzgwNTIsImV4cCI6MTc1OTA2NDQ1Mn0.TKOSi5isRaEhzz6HmNepXO-xK85Fmtt5IM21N2OYt_M
-
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjcwN2Q4YmQyLWQ3NmMtNGFlNi1iMjYxLTVhNjkxYTk1MWEwNCIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0wOS0yOFQxMTowMjoxMi4yOTJaIiwiaWF0IjoxNzU5MDU3MzM3LCJleHAiOjE3NTkxNDM3Mzd9.K1Iz9gna20W3S4cZFtELW0xzP-q2AAFqlJmr0mW04qw
 
 
 ###
@@ -98,11 +97,9 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {     
-    "username"  : "TestParticipant",
+    "username"  : "TESTParticipant2",
     "password"  : "Participant123!",
-    "role"      : "PARTICIPANT",
-    "phone"     : "00000000",
-    "email"     : "Participant@gmail.com"
+    "role"      : "PARTICIPANT"
 
 }
 
@@ -113,11 +110,9 @@ Authorization: Bearer {{token}}
 
 
 {     
-    "username"    : "TESTAdmin1Update",
+    "username"    : "TESTParticipant2",
     "password"    : "Admin1!Update",
-    "role"    : "ADMIN",
-    "phone"    : "11111111",
-    "email"    : "TESTAdmin1Update@gmail.com"
+    "role"    : "PARTICIPANT",
 
 }
 
@@ -227,7 +222,7 @@ Authorization: Bearer {{token}}
 
 
 ###
-GET  http://localhost:5000/api/v1/training/get-training-by-id/bf6dd6cf-c2e8-428b-91e9-660da199c395
+GET  http://localhost:5000/api/v1/training/get-training-by-id/97daef3b-b5c9-49d9-93c1-8208da4e2b65
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -239,10 +234,10 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-    "trainingName": "Advanced Type Script 2",
-    "category": "827b19d6-51ba-49af-9864-099b63fa6ccd",
+    "trainingName": "Advanced Type Script 1",
+    "category": "2326b3df-e217-4c3d-979e-6bcc81da1a45",
     "trainingCode": "TS201",
-    "coach": "08e7edf5-28f5-433b-a21f-52fb8a7803b5",
+    "coach": "5445f72c-b359-4b27-adeb-1f8bf1a57051",
     "price": 20000,
     "startDateTraining": "2023-11-01",
     "endDateTraining": "2023-11-10"
@@ -284,8 +279,7 @@ Authorization: Bearer {{token}}
 
 
 ###
-GET  http://localhost:5000/api/v1/participant/get-participant-by-id/2a8e839c-fd87-464a-a23a-13f3c46ea26d
-Content-Type: application/json
+GET  http://localhost:5000/api/v1/participant/get-participant-by-id/b2bc6117-c7d6-49e3-94d2-fff0dd026ca5
 Authorization: Bearer {{token}}
 
 ###
@@ -308,31 +302,34 @@ Authorization: Bearer {{token}}
     "jobTitle": "Data Analyst",
     "officePhone": 5544332211,
     "message": "Looking for advanced JavaScript training",
-    "training": "8ec89ef3-027b-4b34-b166-5f2b35e8cad3"
+    "training": "e6389a17-45e1-4086-b109-f6189a8360f9",
+    "user" : "0f2fc678-c006-478d-b7af-75ae1e908188"
 }
 
 
 ###
-PUT  http://localhost:5000/api/v1/participant/update-participant/148bccde-6c45-428d-bd7c-40f5676836f0
+PUT  http://localhost:5000/api/v1/participant/update-participant/b2bc6117-c7d6-49e3-94d2-fff0dd026ca5
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-    "email": "updatejane.smith@example.com",
-    "firstName": "update Jane",
-    "lastName": "update Smith",
-    "company": "update Innovate Inc",
-    "companyAddress": "update 456 Innovate Ave",
-    "phone": 1111111,
-    "jobTitle": "update Data Analyst",
-    "officePhone": 1111,
-    "message": "uupdate Looking for advanced JavaScript training"
+    "email": "jane.smith@example.com",
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "company": "Innovate Inc",
+    "companyAddress": "456 Innovate Ave",
+    "phone": 1122334455,
+    "jobTitle": "Data Analyst",
+    "officePhone": 5544332211,
+    "message": "Looking for advanced JavaScript training",
+    "training": "920a59df-31c0-4d7a-9ad8-40d5e374243e",
+    "user" : "99738b9d-e430-4d60-a44e-daf0433da4fe"
 }
 
 
 
 ###
-DELETE   http://localhost:5000/api/v1/participant/delete-participant/148bccde-6c45-428d-bd7c-40f5676836f0
+DELETE   http://localhost:5000/api/v1/participant/delete-participant/96bb76bc-e403-429a-a782-bd418b1ca16d
 Content-Type: application/json
 Authorization: Bearer {{token}}
 

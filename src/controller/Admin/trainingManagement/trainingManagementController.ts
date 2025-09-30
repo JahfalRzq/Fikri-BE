@@ -99,6 +99,8 @@ export const getAllTraining = async (req: Request, res: Response) => {
         ? {
             id: training.categoryTraining.id,
             name: training.categoryTraining.categoryName,
+           code : training.categoryTraining.trainingCode
+
           }
         : null,
       coach: training.trainingCoach
@@ -163,6 +165,7 @@ export const getTrainingtById = async (req: Request, res: Response) => {
         ? {
             id: result.categoryTraining.id,
             name: result.categoryTraining.categoryName,
+            code : result.categoryTraining.trainingCode
           }
         : null,
 
@@ -193,7 +196,6 @@ export const createTraining = async (req: Request, res: Response) => {
     Joi.object({
       trainingName: Joi.string().required(),
       category: Joi.string().required(),
-      trainingCode: Joi.string().required(),
       coach: Joi.string().required(),
       price: Joi.number().min(0).required(),
       startDateTraining: Joi.date().required(),
@@ -253,7 +255,6 @@ export const updateTraining = async (req: Request, res: Response) => {
     Joi.object({
       trainingName: Joi.string().optional(),
       category: Joi.string().optional(),
-      trainingCode: Joi.string().optional(),
       coach: Joi.string().optional(),
       price: Joi.number().min(0).optional(),
       startDateTraining: Joi.date().optional(),

@@ -110,7 +110,6 @@ export const createUser = async (req: Request, res: Response) => {
             username: Joi.string().required(),
             password: Joi.string().min(6).required(),
             role: Joi.string().valid(...Object.values(UserRole)).required(),
-            phone: Joi.string().required(),
         }).validate(input);
 
     try {
@@ -146,8 +145,6 @@ export const updateUser = async (req: Request, res: Response) => {
             username: Joi.string().required(),
             password: Joi.string().min(6).required(),
             role: Joi.string().valid(...Object.values(UserRole)).required(),
-            phone: Joi.string().required(),
-            email: Joi.string().email().required(),
         }).validate(input);
     try {
         const { id } = req.params;
