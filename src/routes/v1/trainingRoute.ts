@@ -15,12 +15,10 @@ const router = Router();
 
 router.get("/get-all-training", [
   authMiddleware,
-  onlyAdminMiddleware,
   getAllTraining,
 ]);
 router.get("/get-training-by-id/:id", [
   authMiddleware,
-  onlyAdminMiddleware,
   getTrainingtById,
 ]);
 router.post("/create-training", [
