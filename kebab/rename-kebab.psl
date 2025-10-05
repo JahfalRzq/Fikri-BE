@@ -1,0 +1,35 @@
+# Fungsi untuk mengonversi string ke kebab-case
+function Convert-ToKebabCase {
+    param([string]$InputString)
+    
+    if ([string]::IsNullOrWhiteSpace($InputString)) {
+        return ""
+    }
+
+    # Ubah ke huruf kecil
+    $lower = $InputString.ToLower()
+
+    # Ganti semua karakter non-alfanumerik dengan '-'
+    $kebab = $lower -replace '[^a-z0-9]', '-'
+
+    # Hapus tanda '-' di awal dan akhir
+    $kebab = $kebab -replace '^-+', ''
+    $kebab = $kebab -replace '-+$', ''
+
+    # Ganti beberapa '-' berturut-turut menjadi satu '-'
+    $kebab = $kebab -replace '-+', '-'
+
+    return $kebab
+}
+
+# Dapatkan semua folder di direktori saat ini
+Get-ChildItem -Directory | ForEach-Object {
+    $oldName = $_.Name
+    $newName = Convert-ToKebabCase $oldName
+
+    # Jika nama baru berbeda dan tidak kosong, lakukan rename
+    if ($newName -ne $oldName -and -not [string]::IsNullOrWhiteSpace($newName)) {
+        Write-Host "Mengganti: '$oldName' → '$newName'"
+        Rename-Item -Path $_.FullName -NewName $newName
+    }
+}
