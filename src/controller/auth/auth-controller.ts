@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { user } from "@/model/user";
 import { AppDataSource } from "@/data-source";
 import type { JwtPayload } from "@/types/jwt-payload";
-import { createJwtToken } from "@/utils/createJwtToken";
+import { createJwtToken } from "@/utils/create-jwt-token";
 import Joi from "joi";
 import {
     successResponse,
