@@ -5,7 +5,7 @@ import {
   createTraining,
   updateTraining,
   deleteTraining,
-} from "@/controller/Admin/trainingManagement/trainingManagementController";
+} from "@/controller/admin/trainingManagement/trainingManagementController";
 import {
   authMiddleware,
   onlyAdminMiddleware,
