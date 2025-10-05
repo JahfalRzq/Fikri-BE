@@ -1,8 +1,9 @@
-import "reflect-metadata";
-import { DataSource } from "typeorm";
-import dotenv from "dotenv";
+import "reflect-metadata"
 
-dotenv.config();
+import dotenv from "dotenv"
+import { DataSource } from "typeorm"
+
+dotenv.config()
 
 export const AppDataSource = new DataSource({
   type: "mysql",
@@ -17,4 +18,4 @@ export const AppDataSource = new DataSource({
   migrations: ["./src/migration/*.ts"],
   subscribers: [],
   // timezone: 'Asia/Jakarta', // Mengatur timezone di sini
-});
+})

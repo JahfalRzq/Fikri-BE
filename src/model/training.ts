@@ -1,31 +1,31 @@
-
-import { IsDate, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsDate, IsNumber, IsOptional, IsString } from "class-validator"
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
   DeleteDateColumn,
-  OneToMany,
+  Entity,
   JoinColumn,
   ManyToOne,
-} from "typeorm";
-import { categoryTraining } from "./categoryTraining";
-import { trainingCoach } from "./trainingCoach";
-import { trainingParticipant } from "./training-participant";
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm"
+
+import { categoryTraining } from "./categoryTraining"
+import { trainingParticipant } from "./training-participant"
+import { trainingCoach } from "./trainingCoach"
 
 @Entity()
 export class training {
   @PrimaryGeneratedColumn("uuid")
-  public id: string;
+  public id: string
 
   @Column({
     default: null,
     nullable: false,
   })
   @IsString()
-  public trainingName: string;
+  public trainingName: string
 
   @Column({
     default: null,
@@ -33,46 +33,51 @@ export class training {
   })
   @IsString()
   @IsOptional()
-  public category: string;
+  public category: string
   @Column({
     default: null,
     nullable: false,
   })
   @IsNumber()
-  public price: number;
+  public price: number
 
   @Column({
     default: null,
     nullable: false,
   })
   @IsDate()
-  public startDateTraining: Date;
+  public startDateTraining: Date
 
   @Column({
     default: null,
     nullable: false,
   })
   @IsDate()
-  public endDateTraining: Date;
+  public endDateTraining: Date
 
   @CreateDateColumn()
-  public createdAt: Date;
+  public createdAt: Date
 
   @UpdateDateColumn()
-  public updatedAt: Date;
+  public updatedAt: Date
 
   @DeleteDateColumn()
-  public deletedAt: Date;
+  public deletedAt: Date
 
-  @ManyToOne(() => categoryTraining, (categoryTraining) => categoryTraining.training)
+  @ManyToOne(
+    () => categoryTraining,
+    (categoryTraining) => categoryTraining.training,
+  )
   @JoinColumn()
-  public categoryTraining: categoryTraining;
+  public categoryTraining: categoryTraining
 
   @ManyToOne(() => trainingCoach, (trainingCoach) => trainingCoach.training)
   @JoinColumn()
-  public trainingCoach: trainingCoach;
+  public trainingCoach: trainingCoach
 
-   @OneToMany(() => trainingParticipant, (trainingParticipant) => trainingParticipant.training)
-  public trainingParticipant: trainingParticipant;
-
+  @OneToMany(
+    () => trainingParticipant,
+    (trainingParticipant) => trainingParticipant.training,
+  )
+  public trainingParticipant: trainingParticipant
 }

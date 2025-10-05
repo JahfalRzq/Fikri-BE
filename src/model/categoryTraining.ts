@@ -1,26 +1,27 @@
-import { IsDate, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsDate, IsNumber, IsOptional, IsString } from "class-validator"
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
   DeleteDateColumn,
+  Entity,
   OneToMany,
-} from "typeorm";
-import { training } from "./training";
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm"
+
+import { training } from "./training"
 
 @Entity()
 export class categoryTraining {
   @PrimaryGeneratedColumn("uuid")
-  public id: string;
+  public id: string
 
   @Column({
     default: null,
     nullable: false,
   })
   @IsString()
-  public categoryName: string;
+  public categoryName: string
 
   @Column({
     default: null,
@@ -28,19 +29,17 @@ export class categoryTraining {
   })
   @IsString()
   @IsOptional()
-  public trainingCode: string;
+  public trainingCode: string
 
   @CreateDateColumn()
-  public createdAt: Date;
+  public createdAt: Date
 
   @UpdateDateColumn()
-  public updatedAt: Date;
+  public updatedAt: Date
 
   @DeleteDateColumn()
-  public deletedAt: Date;
+  public deletedAt: Date
 
   @OneToMany(() => training, (training) => training.categoryTraining)
-  public training: training;
-
-
+  public training: training
 }

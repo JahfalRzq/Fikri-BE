@@ -1,22 +1,23 @@
-import type { Request, Response } from "express";
-import { AppDataSource } from "@/data-source";
-import { user, UserRole } from "@/model/user";
-import { errorResponse, successResponse } from "@/utils/response";
+import type { Request, Response } from "express"
 
-const userRepository = AppDataSource.getRepository(user);
+import { AppDataSource } from "@/data-source"
+import { user, UserRole } from "@/model/user"
+import { errorResponse, successResponse } from "@/utils/response"
+
+const userRepository = AppDataSource.getRepository(user)
 
 export const userSeeder = async (req: Request, res: Response) => {
-  const userSeed = [{ userName: "Admin1", password: "Admin1!0)" }];
+  const userSeed = [{ userName: "Admin1", password: "Admin1!0)" }]
   try {
     for (const data of userSeed) {
-      const newUser = new user();
-      newUser.userName = data.userName;
-      newUser.password = data.password;
-      newUser.role = UserRole.ADMIN;
-      newUser.hashPassword();
-      await userRepository.save(newUser);
+      const newUser = new user()
+      newUser.userName = data.userName
+      newUser.password = data.password
+      newUser.role = UserRole.ADMIN
+      newUser.hashPassword()
+      await userRepository.save(newUser)
     }
-    console.info("User seeded successfully.");
+    console.info("User seeded successfully.")
   } catch (error) {
     return res
       .status(400)
@@ -25,6 +26,6 @@ export const userSeeder = async (req: Request, res: Response) => {
           error instanceof Error ? error.message : "Unknown error occurred",
           400,
         ),
-      );
+      )
   }
-};
+}

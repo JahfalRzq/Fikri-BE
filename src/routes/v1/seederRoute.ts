@@ -1,26 +1,27 @@
-import { Router } from "express";
-import { userSeeder } from "@/controller/seeder/userSeeder";
-import { trainingSeeder } from "@/controller/seeder/trainingSeeder";
-import { participantSeeder } from "@/controller/seeder/particpantSeeder";
+import { Router } from "express"
+
+import { participantSeeder } from "@/controller/seeder/particpantSeeder"
+import { trainingSeeder } from "@/controller/seeder/trainingSeeder"
+import { userSeeder } from "@/controller/seeder/userSeeder"
 import {
   authMiddleware,
   onlyAdminMiddleware,
-} from "@/middleware/authMiddleware";
+} from "@/middleware/authMiddleware"
 
-const router = Router();
+const router = Router()
 
-router.get("/userSeeder", userSeeder);
+router.get("/userSeeder", userSeeder)
 
 router.get("/trainingSeeder", [
-    authMiddleware,
-    onlyAdminMiddleware,
-    trainingSeeder
-]);
+  authMiddleware,
+  onlyAdminMiddleware,
+  trainingSeeder,
+])
 
 router.get("/participantSeeder", [
-    authMiddleware,
-    onlyAdminMiddleware,
-    participantSeeder
-]);
+  authMiddleware,
+  onlyAdminMiddleware,
+  participantSeeder,
+])
 
-export default router;
+export default router
