@@ -4,7 +4,7 @@ import reactConfig from "@yopem/eslint-config/react"
 /** @type {import('typescript-eslint').Config} */
 export default [
   {
-    ignores: ["dist/**"],
+    ignores: ["dist/**", "api/**"],
   },
   ...baseConfig,
   ...reactConfig,
