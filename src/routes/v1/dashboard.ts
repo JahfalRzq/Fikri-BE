@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { getDashboardData } from "@/controller/admin/dashboard/dashboardData";
+import { getDashboardData } from "@/controller/admin/dashboard/dashboard-data";
 import {
   authMiddleware,
   onlyAdminMiddleware,
-} from "@/middleware/authMiddleware";
+} from "@/middleware/auth-middleware";
 
 const router = Router();
 
