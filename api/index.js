@@ -1,3 +1,4 @@
-const app = require('../dist/index.js').default;
+const indexModule = require('../dist/index.js');
+const app = indexModule.default || indexModule;
 
 module.exports = app;
