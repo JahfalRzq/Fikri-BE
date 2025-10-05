@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { AppDataSource } from "@/data-source";
-import { participant, statusTraining } from "@/model/participant";
+import { participant } from "@/model/participant";
 import { user, UserRole } from "@/model/user";
 import { training } from "@/model/training";
 import { errorResponse, successResponse } from "@/utils/response";
@@ -60,8 +60,6 @@ export const participantSeeder = async (req: Request, res: Response) => {
       newParticipant.jobTitle = data.jobTitle;
       newParticipant.officePhone = data.officePhone; // sudah string
       newParticipant.message = data.message;
-      newParticipant.status = statusTraining.belumMulai;
-      newParticipant.training = trainingType;
 
       await participantRepository.save(newParticipant);
 
