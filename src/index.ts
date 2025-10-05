@@ -7,28 +7,67 @@ import path from "path";
 import dotenv from "dotenv";
 
 dotenv.config();
-(async () => {
-    try {
-        await AppDataSource.initialize()
-    } catch (error) {
-        console.error("Error during DB initialization:", error)
+
+const app = express();
+
+// Database initialization flag
+let isDbInitialized = false;
+
+// Initialize database connection
+async function initializeDatabase() {
+    if (!isDbInitialized) {
+        try {
+            await AppDataSource.initialize();
+            isDbInitialized = true;
+            console.info("Database initialized successfully");
+        } catch (error) {
+            console.error("Error during DB initialization:", error);
+            throw error;
+        }
     }
-    const app = express();
-    app.use(
-        cors({
-            credentials: true,
-            origin: ["http://localhost:3000", "http://localhost:3001"],
-        }),
-    );
-    app.use(bodyParser.json({ limit: "1000mb" }));
-    app.use(bodyParser.urlencoded({ extended: true }));
-    app.use("/public", express.static(path.join(__dirname, "../public")));
-    app.get("/", (req, res) => {
-        res.send("Certificate Digital API ready🚀");
+}
+
+// Configure middleware
+app.use(
+    cors({
+        credentials: true,
+        origin: [
+            "http://localhost:3000", 
+            "http://localhost:3001",
+            "https://certification-training-api.vercel.app",
+            "https://certification-training-jade.vercel.app"
+        ],
+    }),
+);
+app.use(bodyParser.json({ limit: "1000mb" }));
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use("/public", express.static(path.join(__dirname, "../public")));
+
+// Middleware to ensure DB is initialized
+app.use(async (req, res, next) => {
+    try {
+        await initializeDatabase();
+        next();
+    } catch (error) {
+        console.error("Database initialization failed:", error);
+        res.status(500).json({ error: "Database connection failed" });
+    }
+});
+
+app.get("/", (req, res) => {
+    res.send("Certificate Digital API ready🚀");
+});
+
+app.use("/", router);
+
+// For local development
+if (process.env.NODE_ENV !== "production") {
+    const PORT = process.env.APP_PORT || 3000;
+    app.listen(PORT, () => {
+        console.info(`Server running at port ${PORT}`);
     });
-    app.use("/", router);
-    app.listen(process.env.APP_PORT, () => {
-        console.info(`Server running at port ${process.env.APP_PORT}`);
-    });
-})().catch((error) => console.warn("Error:", error));
+}
+
+// Export for Vercel
+export default app;
 
