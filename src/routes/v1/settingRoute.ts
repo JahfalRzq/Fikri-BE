@@ -1,28 +1,25 @@
+import { Router } from "express"
 
-import { Router } from "express";
-import { 
-    updateParticipantProfile,
-    updateAdminProfile
-    } from "@/controller/setting/userProfileManagementController";
+import {
+  updateAdminProfile,
+  updateParticipantProfile,
+} from "@/controller/setting/userProfileManagementController"
 import {
   authMiddleware,
   onlyAdminMiddleware,
-} from "@/middleware/authMiddleware";
+} from "@/middleware/authMiddleware"
 
-const router = Router();
-
+const router = Router()
 
 router.put("/edit-participant-profile/:id", [
-    authMiddleware,
-    updateParticipantProfile
-]);
+  authMiddleware,
+  updateParticipantProfile,
+])
 
 router.put("/edit-admin-profile/:id", [
-    authMiddleware,
-    onlyAdminMiddleware,
-    updateAdminProfile
-]);
+  authMiddleware,
+  onlyAdminMiddleware,
+  updateAdminProfile,
+])
 
-export default router;
-
-    
+export default router

@@ -21,8 +21,8 @@ export const successResponse = (
     error: false,
     code: statusCode,
     results,
-  };
-};
+  }
+}
 
 /**
  * @desc    Send any error response
@@ -32,20 +32,20 @@ export const successResponse = (
  */
 export const errorResponse = (message: string, statusCode: number) => {
   // List of common HTTP request code
-  const codes = [200, 201, 400, 401, 403, 404, 405, 409, 422, 500];
+  const codes = [200, 201, 400, 401, 403, 404, 405, 409, 422, 500]
 
   // Get matched code
-  const findCode = codes.find((code) => code === statusCode);
+  const findCode = codes.find((code) => code === statusCode)
 
-  if (!findCode) statusCode = 500;
-  else statusCode = findCode;
+  if (!findCode) statusCode = 500
+  else statusCode = findCode
 
   return {
     message,
     code: statusCode,
     error: true,
-  };
-};
+  }
+}
 
 /**
  * @desc    Send any validation response
@@ -58,5 +58,5 @@ export const validationResponse = (errors: unknown) => {
     error: true,
     code: 422,
     errors,
-  };
-};
+  }
+}

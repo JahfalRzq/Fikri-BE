@@ -11,8 +11,8 @@ import {
   JoinColumn,
   ManyToOne,
 } from "typeorm";
-import { categoryTraining } from "./category-training";
-import { trainingCoach } from "./training-coach";
+import { categoryTraining } from "./categoryTraining";
+import { trainingCoach } from "./trainingCoach";
 import { trainingParticipant } from "./training-participant";
 
 @Entity()

@@ -1,16 +1,17 @@
-import { IsOptional, IsString, IsUppercase } from "class-validator";
+import bcrypt from "bcryptjs"
+import { IsOptional, IsString, IsUppercase } from "class-validator"
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
   DeleteDateColumn,
-  OneToMany,
+  Entity,
   JoinColumn,
-} from "typeorm";
-import bcrypt from "bcryptjs";
-import { participant } from "./participant";
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm"
+
+import { participant } from "./participant"
 
 export enum UserRole {
   ADMIN = "ADMIN",
@@ -20,17 +21,16 @@ export enum UserRole {
 @Entity()
 export class user {
   @PrimaryGeneratedColumn("uuid")
-  public id: string;
+  public id: string
 
   @Column()
   @IsString()
-  public userName: string;
+  public userName: string
 
   @Column()
   @IsString()
   @IsOptional()
-  public password: string;
-
+  public password: string
 
   @Column({
     type: "enum",
@@ -38,33 +38,32 @@ export class user {
   })
   @IsString()
   @IsUppercase()
-  public role: UserRole;
+  public role: UserRole
 
   @Column({
     default: null,
     nullable: true,
   })
   @IsString()
-  public image: string;
+  public image: string
 
   @CreateDateColumn()
-  public createdAt: Date;
+  public createdAt: Date
 
   @UpdateDateColumn()
-  public updatedAt: Date;
+  public updatedAt: Date
 
   @DeleteDateColumn()
-  public deletedAt: Date;
+  public deletedAt: Date
 
   public hashPassword() {
-    this.password = bcrypt.hashSync(this.password, 8);
+    this.password = bcrypt.hashSync(this.password, 8)
   }
 
   public checkIfPasswordMatch(unencryptedPassword: string): boolean {
-
-    return bcrypt.compareSync(unencryptedPassword, this.password);
+    return bcrypt.compareSync(unencryptedPassword, this.password)
   }
 
   @OneToMany(() => participant, (participantId) => participantId.user)
-  public participantId: participant;
+  public participantId: participant
 }

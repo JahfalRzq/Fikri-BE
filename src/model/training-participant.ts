@@ -1,16 +1,24 @@
-import { IsDate, IsNumber, IsOptional, IsString, IsUppercase } from "class-validator";
 import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    UpdateDateColumn,
-    DeleteDateColumn,
-    JoinColumn,
-    ManyToOne,
-} from "typeorm";
-import { participant } from "./participant";
-import { training } from "./training";
+  IsDate,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUppercase,
+} from "class-validator"
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm"
+
+import { participant } from "./participant"
+import { training } from "./training"
+
 export enum statusTraining {
   selesai = "selesai",
   sedangBerlangsung = "sedangBerlangsung",
@@ -18,13 +26,10 @@ export enum statusTraining {
   belumMulai = "belumMulai",
 }
 
-
-
-
 @Entity()
 export class trainingParticipant {
-    @PrimaryGeneratedColumn("uuid")
-    public id: string;
+  @PrimaryGeneratedColumn("uuid")
+  public id: string
 
   @Column({
     type: "enum",
@@ -32,27 +37,25 @@ export class trainingParticipant {
   })
   @IsString()
   @IsUppercase()
-  public status: statusTraining;
+  public status: statusTraining
 
+  @ManyToOne(() => training, (training) => training.trainingParticipant)
+  @JoinColumn()
+  public training: training
 
-    @ManyToOne(() => training, (training) => training.trainingParticipant)
-    @JoinColumn()
-    public training: training;
+  @ManyToOne(
+    () => participant,
+    (participantList) => participantList.trainingParticipant,
+  )
+  @JoinColumn()
+  public participant: participant
 
-    @ManyToOne(() => participant, (participantList) => participantList.trainingParticipant)
-    @JoinColumn()
-    public participant: participant;
+  @CreateDateColumn()
+  public createdAt: Date
 
+  @UpdateDateColumn()
+  public updatedAt: Date
 
-    @CreateDateColumn()
-    public createdAt: Date;
-
-    @UpdateDateColumn()
-    public updatedAt: Date;
-
-    @DeleteDateColumn()
-    public deletedAt: Date;
-
-
-
+  @DeleteDateColumn()
+  public deletedAt: Date
 }

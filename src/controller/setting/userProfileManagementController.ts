@@ -1,16 +1,13 @@
-import type { Request, Response } from "express";
-import { AppDataSource } from "@/data-source";
-import { user, UserRole } from "@/model/user";
-import { participant } from "@/model/participant";
-import Joi from "joi";
-import {
-  successResponse,
-  validationResponse,
-} from "@/utils/response";
+import type { Request, Response } from "express"
+import Joi from "joi"
 
-const userRepository = AppDataSource.getRepository(user);
-const participantRepository = AppDataSource.getRepository(participant);
+import { AppDataSource } from "@/data-source"
+import { participant } from "@/model/participant"
+import { user, UserRole } from "@/model/user"
+import { successResponse, validationResponse } from "@/utils/response"
 
+const userRepository = AppDataSource.getRepository(user)
+const participantRepository = AppDataSource.getRepository(participant)
 
 export const updateAdminProfile = async (req: Request, res: Response) => {
   const updateAdminSchema = (input: any) =>
@@ -19,44 +16,44 @@ export const updateAdminProfile = async (req: Request, res: Response) => {
       userName: Joi.string().optional(),
       phone: Joi.string().optional(),
       password: Joi.string().min(6).optional(),
-    }).validate(input);
+    }).validate(input)
 
   try {
     if (!req.jwtPayload) {
-      return res.status(401).json({ msg: "Unauthorized" });
+      return res.status(401).json({ msg: "Unauthorized" })
     }
 
-    const schema = updateAdminSchema(req.body);
+    const schema = updateAdminSchema(req.body)
     if ("error" in schema) {
-      return res.status(422).send(validationResponse(schema));
+      return res.status(422).send(validationResponse(schema))
     }
 
-    const adminUser = await userRepository.findOneBy({ id: req.jwtPayload.id });
+    const adminUser = await userRepository.findOneBy({ id: req.jwtPayload.id })
     if (!adminUser || adminUser.role !== UserRole.ADMIN) {
-      return res.status(403).json({ msg: "Access Denied" });
+      return res.status(403).json({ msg: "Access Denied" })
     }
 
-    const { email, userName, phone, password } = req.body;
+    const { email, userName, phone, password } = req.body
 
-    adminUser.userName = userName ?? adminUser.userName;
+    adminUser.userName = userName ?? adminUser.userName
 
     if (password) {
-      adminUser.password = password;
-      adminUser.hashPassword();
+      adminUser.password = password
+      adminUser.hashPassword()
     }
 
-    await userRepository.save(adminUser);
+    await userRepository.save(adminUser)
 
     return res
       .status(200)
-      .send(successResponse("Update Admin Profile Success", { adminUser }, 200));
+      .send(successResponse("Update Admin Profile Success", { adminUser }, 200))
   } catch (error) {
     return res.status(500).json({
-      message: error instanceof Error ? error.message : "Unknown error occurred",
-    });
+      message:
+        error instanceof Error ? error.message : "Unknown error occurred",
+    })
   }
-};
-
+}
 
 export const updateParticipantProfile = async (req: Request, res: Response) => {
   const updateParticipantSchema = (input: any) =>
@@ -71,30 +68,30 @@ export const updateParticipantProfile = async (req: Request, res: Response) => {
       officePhone: Joi.string().optional(),
       message: Joi.string().optional(),
       password: Joi.string().min(6).optional(),
-    }).validate(input);
+    }).validate(input)
 
   try {
     if (!req.jwtPayload) {
-      return res.status(401).json({ msg: "Unauthorized" });
+      return res.status(401).json({ msg: "Unauthorized" })
     }
 
-    const schema = updateParticipantSchema(req.body);
+    const schema = updateParticipantSchema(req.body)
     if ("error" in schema) {
-      return res.status(422).send(validationResponse(schema));
+      return res.status(422).send(validationResponse(schema))
     }
 
     const userAccess = await userRepository.findOne({
       where: { id: req.jwtPayload.id },
       relations: ["participantId"],
-    });
+    })
 
     if (!userAccess || userAccess.role !== UserRole.PARTICIPANT) {
-      return res.status(403).json({ msg: "Access Denied" });
+      return res.status(403).json({ msg: "Access Denied" })
     }
 
-    const participantEntity = userAccess.participantId;
+    const participantEntity = userAccess.participantId
     if (!participantEntity) {
-      return res.status(404).json({ msg: "Participant Not Found" });
+      return res.status(404).json({ msg: "Participant Not Found" })
     }
 
     const {
@@ -108,31 +105,31 @@ export const updateParticipantProfile = async (req: Request, res: Response) => {
       officePhone,
       message,
       password,
-    } = req.body;
+    } = req.body
 
     // Update participant
-    participantEntity.email = email ?? participantEntity.email;
-    participantEntity.firstName = firstName ?? participantEntity.firstName;
-    participantEntity.lastName = lastName ?? participantEntity.lastName;
-    participantEntity.company = company ?? participantEntity.company;
+    participantEntity.email = email ?? participantEntity.email
+    participantEntity.firstName = firstName ?? participantEntity.firstName
+    participantEntity.lastName = lastName ?? participantEntity.lastName
+    participantEntity.company = company ?? participantEntity.company
     participantEntity.companyAddress =
-      companyAddress ?? participantEntity.companyAddress;
-    participantEntity.phone = phone ?? participantEntity.phone;
-    participantEntity.jobTitle = jobTitle ?? participantEntity.jobTitle;
-    participantEntity.officePhone = officePhone ?? participantEntity.officePhone;
-    participantEntity.message = message ?? participantEntity.message;
+      companyAddress ?? participantEntity.companyAddress
+    participantEntity.phone = phone ?? participantEntity.phone
+    participantEntity.jobTitle = jobTitle ?? participantEntity.jobTitle
+    participantEntity.officePhone = officePhone ?? participantEntity.officePhone
+    participantEntity.message = message ?? participantEntity.message
 
-    await participantRepository.save(participantEntity);
+    await participantRepository.save(participantEntity)
 
     // Update user linked to participant
-    userAccess.userName = participantEntity.firstName;
+    userAccess.userName = participantEntity.firstName
 
     if (password) {
-      userAccess.password = password;
-      userAccess.hashPassword();
+      userAccess.password = password
+      userAccess.hashPassword()
     }
 
-    await userRepository.save(userAccess);
+    await userRepository.save(userAccess)
 
     return res
       .status(200)
@@ -142,10 +139,11 @@ export const updateParticipantProfile = async (req: Request, res: Response) => {
           { participant: participantEntity, user: userAccess },
           200,
         ),
-      );
+      )
   } catch (error) {
     return res.status(500).json({
-      message: error instanceof Error ? error.message : "Unknown error occurred",
-    });
+      message:
+        error instanceof Error ? error.message : "Unknown error occurred",
+    })
   }
-};
+}

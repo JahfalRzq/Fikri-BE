@@ -1,9 +1,10 @@
-import type { Request, Response } from "express";
-import { AppDataSource } from "@/data-source";
-import { training } from "@/model/training";
-import { errorResponse, successResponse } from "@/utils/response";
+import type { Request, Response } from "express"
 
-const trainingRepository = AppDataSource.getRepository(training);
+import { AppDataSource } from "@/data-source"
+import { training } from "@/model/training"
+import { errorResponse, successResponse } from "@/utils/response"
+
+const trainingRepository = AppDataSource.getRepository(training)
 
 export const trainingSeeder = async (req: Request, res: Response) => {
   const trainingSeed = [
@@ -34,7 +35,7 @@ export const trainingSeeder = async (req: Request, res: Response) => {
       startDateTraining: new Date("2025-12-01"),
       endDateTraining: new Date("2025-12-03"),
     },
-  ];
+  ]
 
   try {
     for (const data of trainingSeed) {
@@ -46,15 +47,15 @@ export const trainingSeeder = async (req: Request, res: Response) => {
         price: data.price,
         startDateTraining: data.startDateTraining,
         endDateTraining: data.endDateTraining,
-      });
+      })
 
-      await trainingRepository.save(newTraining);
+      await trainingRepository.save(newTraining)
     }
 
-    console.info("Training seeded successfully.");
+    console.info("Training seeded successfully.")
     return res
       .status(201)
-      .send(successResponse("Training seeded successfully", null, 201));
+      .send(successResponse("Training seeded successfully", null, 201))
   } catch (error) {
     return res
       .status(400)
@@ -63,7 +64,6 @@ export const trainingSeeder = async (req: Request, res: Response) => {
           error instanceof Error ? error.message : "Unknown error occurred",
           400,
         ),
-      );
+      )
   }
-};
-
+}

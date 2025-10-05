@@ -5,12 +5,12 @@ import {
   onlyAdminMiddleware,
 } from "@/middleware/auth-middleware";
 
-const router = Router();
+const router = Router()
 
 router.get("/dashboard-data", [
   authMiddleware,
   onlyAdminMiddleware,
   getDashboardData,
-]);
+])
 
-export default router;
+export default router
