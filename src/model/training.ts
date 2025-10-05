@@ -1,3 +1,4 @@
+
 import { IsDate, IsNumber, IsOptional, IsString } from "class-validator";
 import {
   Entity,
@@ -10,9 +11,9 @@ import {
   JoinColumn,
   ManyToOne,
 } from "typeorm";
-import { participant } from "./participant";
 import { categoryTraining } from "./categoryTraining";
 import { trainingCoach } from "./trainingCoach";
+import { trainingParticipant } from "./training-participant";
 
 @Entity()
 export class training {
@@ -63,9 +64,6 @@ export class training {
   @DeleteDateColumn()
   public deletedAt: Date;
 
-  @OneToMany(() => participant, (participant) => participant.training)
-  public participant: participant[];
-
   @ManyToOne(() => categoryTraining, (categoryTraining) => categoryTraining.training)
   @JoinColumn()
   public categoryTraining: categoryTraining;
@@ -73,4 +71,8 @@ export class training {
   @ManyToOne(() => trainingCoach, (trainingCoach) => trainingCoach.training)
   @JoinColumn()
   public trainingCoach: trainingCoach;
+
+   @OneToMany(() => trainingParticipant, (trainingParticipant) => trainingParticipant.training)
+  public trainingParticipant: trainingParticipant;
+
 }
