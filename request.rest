@@ -1,4 +1,7 @@
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjcwN2Q4YmQyLWQ3NmMtNGFlNi1iMjYxLTVhNjkxYTk1MWEwNCIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0wOS0yOFQxMTowMjoxMi4yOTJaIiwiaWF0IjoxNzU5MDU3MzM3LCJleHAiOjE3NTkxNDM3Mzd9.K1Iz9gna20W3S4cZFtELW0xzP-q2AAFqlJmr0mW04qw
+request rest :
+
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjcwN2Q4YmQyLWQ3NmMtNGFlNi1iMjYxLTVhNjkxYTk1MWEwNCIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0wOS0yOFQxMTowMjoxMi4yOTJaIiwiaWF0IjoxNzU5NTAxMTY0LCJleHAiOjE3NTk1ODc1NjR9.h2oYT01HRlzZx22Dw7cW4byi3Mj2LuqUTbHl13I3q8g
+
 
 
 ###
@@ -298,12 +301,16 @@ Authorization: Bearer {{token}}
     "lastName": "Smith",
     "company": "Innovate Inc",
     "companyAddress": "456 Innovate Ave",
-    "phone": 1122334455,
+    "phone": "1122334455",
     "jobTitle": "Data Analyst",
-    "officePhone": 5544332211,
+    "officePhone": "5544332211",
     "message": "Looking for advanced JavaScript training",
-    "training": "e6389a17-45e1-4086-b109-f6189a8360f9",
-    "user" : "0f2fc678-c006-478d-b7af-75ae1e908188"
+    "training": "97daef3b-b5c9-49d9-93c1-8208da4e2b65",
+    "user" : "0f2fc678-c006-478d-b7af-75ae1e908188",
+    "isExisting" : true,
+    "participantId": "766626cf-6c82-486f-aea2-abe1e516d3c6"
+
+
 }
 
 
@@ -329,7 +336,7 @@ Authorization: Bearer {{token}}
 
 
 ###
-DELETE   http://localhost:5000/api/v1/participant/delete-participant/96bb76bc-e403-429a-a782-bd418b1ca16d
+DELETE   http://localhost:5000/api/v1/participant/delete-participant/f20f5781-5def-4841-95a9-8abcd6c3c690
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -341,6 +348,7 @@ Authorization: Bearer {{token}}
 {
     "status" : "sedangBerlangsung"
 }
+
 
 
 
