@@ -1,22 +1,25 @@
 import type { Request, Response } from "express";
 import { AppDataSource } from "@/data-source";
-import { participant, statusTraining } from "@/model/participant";
+import { participant } from "@/model/participant";
+import { trainingParticipant,statusTraining } from "@/model/training-participant";
 import { successResponse } from "@/utils/response";
 
 const participantRepository = AppDataSource.getRepository(participant);
+const participantTrainingRepository = AppDataSource.getRepository(trainingParticipant);
+
 
 export const getDashboardData = async (req: Request, res: Response) => {
   try {
     // Query untuk mendapatkan jumlah total peserta
-    const totalParticipants = await participantRepository.count();
+    const totalParticipants = await participantTrainingRepository.count();
 
     // Query untuk mendapatkan jumlah peserta dengan status "sedangBerlangsung"
-    const participantsSedangBerlangsung = await participantRepository.countBy({
+    const participantsSedangBerlangsung = await participantTrainingRepository.countBy({
       status: statusTraining.sedangBerlangsung,
     });
 
     // Query untuk mendapatkan jumlah peserta dengan status "selesai"
-    const participantsSelesai = await participantRepository.countBy({
+    const participantsSelesai = await participantTrainingRepository.countBy({
       status: statusTraining.selesai,
     });
 
@@ -42,3 +45,4 @@ export const getDashboardData = async (req: Request, res: Response) => {
     });
   }
 };
+
