@@ -5,3 +5,4 @@ public/assets/files/*
 package-lock.json
 dist/
 .env
+.env.prod
