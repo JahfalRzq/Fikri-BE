@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getDashboardData } from "@/controller/admin/dashboard/dashboard-data";
+import { getDashboardData } from "@/controller/admin/dashboard/dashboard-data-controller";
 import {
   authMiddleware,
   onlyAdminMiddleware,
