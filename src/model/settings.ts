@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 
 
 @Entity()
-export class coach {
+export class settings {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
