@@ -1,7 +1,6 @@
 request rest :
 
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjcwN2Q4YmQyLWQ3NmMtNGFlNi1iMjYxLTVhNjkxYTk1MWEwNCIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0wOS0yOFQxMTowMjoxMi4yOTJaIiwiaWF0IjoxNzU5NTAxMTY0LCJleHAiOjE3NTk1ODc1NjR9.h2oYT01HRlzZx22Dw7cW4byi3Mj2LuqUTbHl13I3q8g
-
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImI0NDMwNGEwLTEyYjYtNDRjNi04MTkyLTYwYzc2MWY4YWFlNSIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0xMC0wNlQyMjowNDo0MS42NTZaIiwiaWF0IjoxNzU5Nzg4MzE1LCJleHAiOjE3NTk4NzQ3MTV9.vTAVPqB5_-cUfjALGWuPWSFIZElgFz-InPbLKj-aCZg
 
 
 ###
@@ -35,6 +34,25 @@ Content-Type: application/json
 {     "userName"    : "Admin1",
       "password" : "Admin1!0)"
 }
+
+###
+POST  http://localhost:5000/api/v1/auth/login
+Content-Type: application/json
+
+{     "userName"    : "Admin1",
+      "password" : "Admin1!0)"
+}
+
+
+###
+POST  http://localhost:5000/api/v1/auth/register
+Content-Type: application/json
+
+{     "userName"    : "participant",
+      "password" : "Participant!0)"
+}
+
+
 
 
 ###
