@@ -1,11 +1,11 @@
 import type { Request, Response } from "express";
 import { AppDataSource } from "@/data-source";
-import { participant } from "@/model/participant";
+// import { participant } from "@/model/participant";
 import { user, UserRole } from "@/model/user";
 import { training } from "@/model/training";
 import { errorResponse, successResponse } from "@/utils/response";
 
-const participantRepository = AppDataSource.getRepository(participant);
+// const participantRepository = AppDataSource.getRepository(participant);
 const userRepository = AppDataSource.getRepository(user);
 const trainingRepository = AppDataSource.getRepository(training);
 
