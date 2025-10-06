@@ -1,5 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany } from "typeorm";
 import { participant } from "./participant";
+import bcrypt from 'bcryptjs';
+
 
 export enum UserRole {
   ADMIN = "ADMIN",
@@ -34,4 +36,13 @@ export class user {
 
   @OneToMany(() => participant, (p) => p.user)
   participants: participant[];
+
+
+  public hashPassword() {
+    this.password = bcrypt.hashSync(this.password, 8)
+  }
+
+  public checkIfPasswordMatch(unencryptedPassword: string): boolean {
+    return bcrypt.compareSync(unencryptedPassword, this.password)
+  }
 }
