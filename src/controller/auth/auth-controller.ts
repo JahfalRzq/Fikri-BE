@@ -14,90 +14,90 @@ import bcrypt from "bcryptjs";
 const userRepository = AppDataSource.getRepository(user);
 
 export const fetch = async (req: Request, res: Response) => {
-    try {
-        const userFetch = await userRepository.findOneBy({ id: req.jwtPayload?.id });
+    // try {
+    //     const userFetch = await userRepository.findOneBy({ id: req.jwtPayload?.id });
 
-        return res
-            .status(200)
-            .send(successResponse("User Authorized", { data: userFetch }, 200));
-    } catch (error) {
-        return res.status(400).send(errorResponse(
-            error instanceof Error ? error.message : 'Unknown error occurred',
-            400
-        ));
-    }
+    //     return res
+    //         .status(200)
+    //         .send(successResponse("User Authorized", { data: userFetch }, 200));
+    // } catch (error) {
+    //     return res.status(400).send(errorResponse(
+    //         error instanceof Error ? error.message : 'Unknown error occurred',
+    //         400
+    //     ));
+    // }
 };
 
 export const login = async (req: Request, res: Response) => {
-    try {
-        const { userName, password } = req.body;
+    // try {
+    //     const { userName, password } = req.body;
 
-        const user = await userRepository.findOne({
-            where: {
-                userName: userName,
-            },
-        });
+    //     const user = await userRepository.findOne({
+    //         where: {
+    //             userName: userName,
+    //         },
+    //     });
 
-        if (!user) {
-            console.log("User not found:", userName);
-            return res.status(401).send(errorResponse("Incorect username", 401));
-        }
+    //     if (!user) {
+    //         console.log("User not found:", userName);
+    //         return res.status(401).send(errorResponse("Incorect username", 401));
+    //     }
 
-        if (!user.checkIfPasswordMatch(password)) {
-            return res.status(401).send(errorResponse("Incorect password", 401));
-        }
+    //     if (!user.checkIfPasswordMatch(password)) {
+    //         return res.status(401).send(errorResponse("Incorect password", 401));
+    //     }
 
-        const jwtPayload: JwtPayload = {
-            id: user.id,
-            userName: user.userName,
-            createdAt: user.createdAt,
-        };
+    //     const jwtPayload: JwtPayload = {
+    //         id: user.id,
+    //         userName: user.userName,
+    //         createdAt: user.createdAt,
+    //     };
 
-        const token = createJwtToken(jwtPayload);
-        const data = { user, token };
+    //     const token = createJwtToken(jwtPayload);
+    //     const data = { user, token };
 
-        return res
-            .status(200)
-            .send(successResponse("Login Success", { data: data }, res.statusCode));
-    } catch (error) {
-        return res.status(400).send(errorResponse(
-            error instanceof Error ? error.message : 'Unknown error occurred',
-            400
-        ));
-    }
+    //     return res
+    //         .status(200)
+    //         .send(successResponse("Login Success", { data: data }, res.statusCode));
+    // } catch (error) {
+    //     return res.status(400).send(errorResponse(
+    //         error instanceof Error ? error.message : 'Unknown error occurred',
+    //         400
+    //     ));
+    // }
 };
 
 
 
 export const register = async (req: Request, res: Response) => {
-    try {
-        const { userName, password } = req.body;
+    // try {
+    //     const { userName, password } = req.body;
 
-        // Validasi input
-        if (!userName || !password) {
-            return res.status(400).send(validationResponse('userName and password are required'));
-        }
+    //     // Validasi input
+    //     if (!userName || !password) {
+    //         return res.status(400).send(validationResponse('userName and password are required'));
+    //     }
 
-        // Periksa apakah email sudah digunakan
-        // const existingUser = await userRepository.findOne({ where: { email } });
-        // if (existingUser) {
-        //     return res.status(409).send(errorResponse('email already exists', 409));
-        // }
+    //     // Periksa apakah email sudah digunakan
+    //     // const existingUser = await userRepository.findOne({ where: { email } });
+    //     // if (existingUser) {
+    //     //     return res.status(409).send(errorResponse('email already exists', 409));
+    //     // }
 
-        // Hash password sebelum menyimpan ke database
-        const hashedPassword = bcrypt.hashSync(password, 8);
+    //     // Hash password sebelum menyimpan ke database
+    //     const hashedPassword = bcrypt.hashSync(password, 8);
 
-        // Buat objek pengguna baru
-        const newUser = new user();
-        newUser.userName = userName;
-        newUser.password = hashedPassword;
+    //     // Buat objek pengguna baru
+    //     const newUser = new user();
+    //     newUser.userName = userName;
+    //     newUser.password = hashedPassword;
 
-        // Simpan pengguna ke database
-        await userRepository.save(newUser);
+    //     // Simpan pengguna ke database
+    //     await userRepository.save(newUser);
 
-        return res.status(201).send(successResponse('Registration successful', { data: newUser }, 201));
-    } catch (error) {
-        console.error('Error during registration:', error);
-        return res.status(500).send(errorResponse('Internal server error', 500));
-    }
+    //     return res.status(201).send(successResponse('Registration successful', { data: newUser }, 201));
+    // } catch (error) {
+    //     console.error('Error during registration:', error);
+    //     return res.status(500).send(errorResponse('Internal server error', 500));
+    // }
 };

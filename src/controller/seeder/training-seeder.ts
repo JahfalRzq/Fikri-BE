@@ -36,34 +36,34 @@ export const trainingSeeder = async (req: Request, res: Response) => {
     },
   ];
 
-  try {
-    for (const data of trainingSeed) {
-      const newTraining = trainingRepository.create({
-        trainingName: data.trainingName,
-        category: data.category,
-        // trainingCode: data.trainingCode,
-        // coach: data.coach,
-        price: data.price,
-        startDateTraining: data.startDateTraining,
-        endDateTraining: data.endDateTraining,
-      });
+  // try {
+  //   for (const data of trainingSeed) {
+  //     const newTraining = trainingRepository.create({
+  //       trainingName: data.trainingName,
+  //       category: data.category,
+  //       // trainingCode: data.trainingCode,
+  //       // coach: data.coach,
+  //       price: data.price,
+  //       startDateTraining: data.startDateTraining,
+  //       endDateTraining: data.endDateTraining,
+  //     });
 
-      await trainingRepository.save(newTraining);
-    }
+  //     await trainingRepository.save(newTraining);
+  //   }
 
-    console.info("Training seeded successfully.");
-    return res
-      .status(201)
-      .send(successResponse("Training seeded successfully", null, 201));
-  } catch (error) {
-    return res
-      .status(400)
-      .send(
-        errorResponse(
-          error instanceof Error ? error.message : "Unknown error occurred",
-          400,
-        ),
-      );
-  }
+  //   console.info("Training seeded successfully.");
+  //   return res
+  //     .status(201)
+  //     .send(successResponse("Training seeded successfully", null, 201));
+  // } catch (error) {
+  //   return res
+  //     .status(400)
+  //     .send(
+  //       errorResponse(
+  //         error instanceof Error ? error.message : "Unknown error occurred",
+  //         400,
+  //       ),
+  //     );
+  // }
 };
 
