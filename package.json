@@ -7,6 +7,7 @@
     "dev": "nodemon src/index.ts",
     "start": "node dist/index.js",
     "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d src/data-source.ts",
     "build": "tsc && tsc-alias",
     "format:write": "prettier --write \"**/*.{ts,tsx,mts,js,jsx,mjs,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,mts,js,jsx,mjs,json,md}\"",
