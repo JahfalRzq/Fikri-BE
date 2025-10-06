@@ -14,12 +14,6 @@ Authorization: Bearer {{token}}
 
 
 ###
-GET http://localhost:5000/api/v1/seeder/trainingSeeder
-Content-Type: application/json
-Authorization: Bearer {{token}}
-
-
-###
 GET http://localhost:5000/api/v1/seeder/participantSeeder
 Content-Type: application/json
 Authorization: Bearer {{token}}
