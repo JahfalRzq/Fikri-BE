@@ -14,8 +14,8 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_DATABASE,
   synchronize: true,
   logging: true,
-  entities: ["./src/model/*.ts"],
-  migrations: ["./src/migration/*.ts"],
+  entities: ["src/model/**/*.ts"], // ✅ perbaikan path
+  migrations: ["src/migrations/**/*.ts"], // ✅ perbaikan folder
   subscribers: [],
   // timezone: 'Asia/Jakarta', // Mengatur timezone di sini
 })
