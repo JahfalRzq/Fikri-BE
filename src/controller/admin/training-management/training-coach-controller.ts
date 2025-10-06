@@ -2,9 +2,9 @@ import { Request, Response } from 'express';
 import Joi from 'joi';
 import { AppDataSource } from '@/data-source';
 import { errorResponse, successResponse, validationResponse } from '@/utils/response';
-import { trainingCoach } from '@/model/coach';
+// import { trainingCoach } from '@/model/coach';
 
-const trainingCoachRepository = AppDataSource.getRepository(trainingCoach);
+// const trainingCoachRepository = AppDataSource.getRepository(trainingCoach);
 
 export const getAllTrainingCoaches = async (req: Request, res: Response) => {
     // try {

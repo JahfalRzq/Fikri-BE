@@ -3,11 +3,11 @@ import { AppDataSource } from "@/data-source";
 import { training } from "@/model/training";
 import Joi from "joi";
 import { successResponse, validationResponse } from "@/utils/response";
-import { trainingCoach } from "@/model/coach";
+// import { trainingCoach } from "@/model/coach";
 // import { categoryTraining } from "@/model/category-training";
 
 const trainingRepository = AppDataSource.getRepository(training);
-const trainingCoachRepository = AppDataSource.getRepository(trainingCoach);
+// const trainingCoachRepository = AppDataSource.getRepository(trainingCoach);
 // const categoryTrainingRepository = AppDataSource.getRepository(categoryTraining)
 
 export const getAllTraining = async (req: Request, res: Response) => {
