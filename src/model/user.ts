@@ -45,7 +45,7 @@ export class user {
     nullable: true,
   })
   @IsString()
-  public image: string
+  public avatarImage: string
 
   @CreateDateColumn()
   public createdAt: Date
