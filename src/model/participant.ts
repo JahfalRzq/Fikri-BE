@@ -11,7 +11,6 @@ import {
   UpdateDateColumn,
 } from "typeorm"
 
-import { training } from "./training"
 import { trainingParticipant } from "./training-participant"
 import { user } from "./user"
 
