@@ -14,6 +14,8 @@ import {
 import { categoryTraining } from "./category-training";
 import { trainingCoach } from "./training-coach";
 import { trainingParticipant } from "./training-participant";
+import { trainingCategory } from "./training-category";
+import { trainingParticipantCategory } from "./training-participant-category";
 
 @Entity()
 export class training {
@@ -72,7 +74,13 @@ export class training {
   @JoinColumn()
   public trainingCoach: trainingCoach;
 
-   @OneToMany(() => trainingParticipant, (trainingParticipant) => trainingParticipant.training)
+  @OneToMany(() => trainingParticipant, (trainingParticipant) => trainingParticipant.training)
   public trainingParticipant: trainingParticipant;
+
+  @OneToMany(() => trainingCategory, (trainingCategory) => trainingCategory.training)
+  public trainingCategory: trainingCategory;
+
+  @OneToMany(() => trainingParticipantCategory, (trainingParticipantCategory) => trainingParticipantCategory.training)
+  public trainingParticipantCategory: trainingParticipantCategory;
 
 }
