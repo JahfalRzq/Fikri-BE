@@ -5,7 +5,7 @@ import {
     createCategoryTraining,
     updateCategoryTraining,
     deleteCategoryTraining
- } from "@/controller/admin/training-management/category-training-controller";
+ } from "@/controller/admin/training-management/training-category-controller";
 
  import {
   authMiddleware,
