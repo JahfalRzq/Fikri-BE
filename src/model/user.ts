@@ -23,7 +23,7 @@ export class user {
   role: UserRole;
 
   @Column({ nullable: true })
-  image: string;
+  imageAvatar: string;
 
   @CreateDateColumn()
   createdAt: Date;
