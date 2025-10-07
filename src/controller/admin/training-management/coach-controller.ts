@@ -6,7 +6,7 @@ import { coach } from '@/model/coach';
 
 const trainingCoachRepository = AppDataSource.getRepository(coach);
 
-export const getAllTrainingCoaches = async (req: Request, res: Response) => {
+export const getAllCoaches = async (req: Request, res: Response) => {
     try {
         const {
             coachName,
@@ -65,7 +65,7 @@ export const getAllTrainingCoaches = async (req: Request, res: Response) => {
     }
 };
 
-export const getTrainingCoachById = async (req: Request, res: Response) => {
+export const getCoachById = async (req: Request, res: Response) => {
     try {
         const id = req.params.id;
 
@@ -105,7 +105,7 @@ export const getTrainingCoachById = async (req: Request, res: Response) => {
     }
 };
 
-export const createTrainingCoach = async (req: Request, res: Response) => {
+export const createCoach = async (req: Request, res: Response) => {
     const createTrainingCoachSchema = (input: any) =>
     Joi.object({
         coachName: Joi.string().required(),
@@ -133,7 +133,7 @@ export const createTrainingCoach = async (req: Request, res: Response) => {
     }
 };
 
-export const updateTrainingCoach = async (req: Request, res: Response) => {
+export const updateCoach = async (req: Request, res: Response) => {
   const updateTrainingCoachSchema = (input: any) =>
     Joi.object({
       coachName: Joi.string().optional(),
@@ -177,7 +177,7 @@ export const updateTrainingCoach = async (req: Request, res: Response) => {
 };
 
 
-export const deleteTrainingCoach = async (req: Request, res: Response) => {
+export const deleteCoach = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {

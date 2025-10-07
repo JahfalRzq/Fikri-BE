@@ -5,7 +5,7 @@ import TrainingRoute from "./training-route";
 import ParticipantRoute from "./participant-route";
 import DashboardData from "./dashboard";
 import setting from "./setting-route"
-import TrainingCoachRoute from "./training-coach-route";
+import CoachRoute from "./coach-route";
 import CategoryRoute from "./category-route";
 import UserManagementRoute from "./user-management-route"
 
@@ -18,7 +18,7 @@ router.use("/user-management", UserManagementRoute);
 router.use("/participant", ParticipantRoute);
 router.use("/dashboard", DashboardData);
 router.use("/setting", setting);
-router.use("/training-coach", TrainingCoachRoute);
+router.use("/coach", CoachRoute);
 router.use("/category", CategoryRoute);
 
 
