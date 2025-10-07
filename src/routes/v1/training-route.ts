@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
   getAllTraining,
-  getTrainingtById,
+  getTrainingById,
   createTraining,
   updateTraining,
   deleteTraining,
@@ -19,7 +19,7 @@ router.get("/get-all-training", [
 ]);
 router.get("/get-training-by-id/:id", [
   authMiddleware,
-  getTrainingtById,
+  getTrainingById,
 ]);
 router.post("/create-training", [
   authMiddleware,
