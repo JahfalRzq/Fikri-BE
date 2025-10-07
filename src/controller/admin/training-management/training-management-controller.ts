@@ -394,40 +394,37 @@ export const deleteTraining = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // ✅ Cari training berdasarkan ID
     const trainingToDelete = await trainingRepository.findOne({
       where: { id },
       relations: ["trainingCategory"],
     });
 
     if (!trainingToDelete) {
-      return res.status(404).send(errorResponse("Training not found", 404));
+      return res.status(404).json({ msg: "Training not Found" });
     }
 
-    // ✅ Hapus semua relasi trainingCategory yang terhubung ke training ini
-    if (trainingToDelete.trainingCategory && trainingToDelete.trainingCategory.length > 0) {
-      await trainingCategoryRepository.remove(trainingToDelete.trainingCategory);
+    // Soft delete semua relasi trainingCategory
+    if (trainingToDelete.trainingCategory?.length > 0) {
+      await trainingCategoryRepository.softRemove(trainingToDelete.trainingCategory);
     }
 
-    // ✅ Soft delete training (tidak dihapus permanen)
+    // Soft delete training utama
     await trainingRepository.softRemove(trainingToDelete);
 
     return res
       .status(200)
       .send(
         successResponse(
-          "Training deleted successfully (soft delete)",
-          { data: { id, deletedAt: new Date() } },
+          "Training soft-deleted successfully (including related categories)",
+          { data: trainingToDelete },
           200
         )
       );
   } catch (error) {
-    return res.status(500).send(
-      errorResponse(
+    return res.status(500).json({
+      message:
         error instanceof Error ? error.message : "Unknown error occurred",
-        500
-      )
-    );
+    });
   }
 };
 
