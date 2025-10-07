@@ -1,12 +1,13 @@
 ﻿
 # Fikri-BE
 
-#####
-# migrations models
+# Reset total database (drop + migrate + seed)	npm run db:reset:full
 
-# delete file migrations : rm src/migrations/*.ts
+# Jalankan seeder saja	npm run db:seed
 
-# generate migration model : migration:generate -d src/data-source.ts src/migrations/CreateTrainingSystemSchema
+# Generate migration baru	npm run migration:generate -- src/migrations/UpdateSchema
 
-# running migration model : npm run migration:run  
+# Jalankan migration	npm run migration:run
+
+# Drop database manual	npm run db:drop
 
