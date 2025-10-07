@@ -3,7 +3,7 @@ import { trainingParticipant } from "./training-participant";
 
 @Entity()
 export class certificate {
-  @PrimaryGeneratedColumn("increment")
+  @PrimaryGeneratedColumn("uuid")
   id: number;
 
   @Column()
