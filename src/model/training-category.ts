@@ -4,7 +4,7 @@ import { training } from "./training";
 
 @Entity()
 export class trainingCategory {
-  @PrimaryGeneratedColumn("increment")
+  @PrimaryGeneratedColumn("uuid")
   id: number;
 
   @ManyToOne(() => category, (c) => c.trainingCategory)
