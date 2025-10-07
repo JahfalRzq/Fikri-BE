@@ -152,7 +152,7 @@ Authorization: Bearer {{token}}
 
 
 ###
-GET  http://localhost:5000/api/v1/training-coach/get-training-coach-by-id/d9564180-3b30-4651-aa73-99efe342e12d
+GET  http://localhost:5000/api/v1/training-coach/get-training-coach-by-id/5b74083b-6214-4f9d-8e3a-c8b9c26836d4
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -164,11 +164,11 @@ POST  http://localhost:5000/api/v1/training-coach/create-training-coach
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
-{     "coachName"    : "Jafal"
+{     "coachName"    : "Jafal Test"
 }
 
 ###
-PUT  http://localhost:5000/api/v1/training-coach/update-training-coach/d9564180-3b30-4651-aa73-99efe342e12d
+PUT  http://localhost:5000/api/v1/training-coach/update-training-coach/0aab4dae-5393-4e8e-aa59-f74cd58fcf07
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -177,20 +177,20 @@ Authorization: Bearer {{token}}
 
 
 ###
-DELETE  http://localhost:5000/api/v1/training-coach/delete-training-coach/d9564180-3b30-4651-aa73-99efe342e12d
+DELETE  http://localhost:5000/api/v1/training-coach/delete-training-coach/0aab4dae-5393-4e8e-aa59-f74cd58fcf07
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 
 
 ###
-GET  http://localhost:5000/api/v1/training-category/get-all-training-category
+GET  http://localhost:5000/api/v1/category/get-all-category
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 
 ###
-GET  http://localhost:5000/api/v1/training-category/get-training-category-by-id/7337b57e-6e12-4386-844d-7975dd70c03a
+GET  http://localhost:5000/api/v1/category/get-category-by-id/217831a5-2e49-4ad5-b70f-cead576cce50
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -198,29 +198,29 @@ Authorization: Bearer {{token}}
 
 
 ###
-POST  http://localhost:5000/api/v1/training-category/create-training-category
-Content-Type: application/json
-Authorization: Bearer {{token}}
-
-{     
-    "categoryName"    : "MANTA2",
-    "trainingCode"    : "MANTA-002"
-
-}
-
-###
-PUT  http://localhost:5000/api/v1/training-category/update-training-category/7337b57e-6e12-4386-844d-7975dd70c03a
+POST  http://localhost:5000/api/v1/category/create-category
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {     
-    "categoryName"    : "Update Manta",
-    "trainingCode"    : "MANTA-003"
+    "categoryName"    : "TestNewUpdate",
+    "trainingCode"    : "NewUpdate-002"
+
+}
+
+###
+PUT  http://localhost:5000/api/v1/category/update-category/ecf38f36-b0da-487a-b01c-d3ad6d874f8a
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{     
+    "categoryName"    : "TestNewUpdateEndpoint",
+    "trainingCode"    : "NewUpdate-003"
 }
 
 
 ###
-DELETE  http://localhost:5000/api/v1/training-category/delete-training-category/7337b57e-6e12-4386-844d-7975dd70c03a
+DELETE  http://localhost:5000/api/v1/category/delete-category/ecf38f36-b0da-487a-b01c-d3ad6d874f8a
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
