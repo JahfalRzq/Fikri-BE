@@ -5,6 +5,7 @@ import {
   createTraining,
   updateTraining,
   deleteTraining,
+  restoreTraining
 } from "@/controller/admin/training-management/training-management-controller";
 import {
   authMiddleware,
@@ -35,6 +36,11 @@ router.delete("/delete-training/:id", [
   authMiddleware,
   onlyAdminMiddleware,
   deleteTraining,
+]);
+router.delete("/restore-training/:id", [
+  authMiddleware,
+  onlyAdminMiddleware,
+  restoreTraining,
 ]);
 
 export default router;

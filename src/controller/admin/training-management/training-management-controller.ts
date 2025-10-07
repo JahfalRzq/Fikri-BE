@@ -428,3 +428,42 @@ export const deleteTraining = async (req: Request, res: Response) => {
   }
 };
 
+
+export const restoreTraining = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // ✅ Cari training termasuk yang soft-deleted
+    const deletedTraining = await trainingRepository.findOne({
+      where: { id },
+      relations: ["trainingCategory"],
+      withDeleted: true,
+    });
+
+    if (!deletedTraining) {
+      return res.status(404).json({ msg: "Training not found or already active" });
+    }
+
+    // ✅ Restore training utama
+    await trainingRepository.restore(id);
+
+    // ✅ Restore semua trainingCategory yang berelasi
+    if (deletedTraining.trainingCategory?.length > 0) {
+      const categoryIds = deletedTraining.trainingCategory.map((tc) => tc.id);
+      await trainingCategoryRepository.restore(categoryIds);
+    }
+
+    return res.status(200).send(
+      successResponse(
+        "Training and related training categories restored successfully",
+        { data: deletedTraining },
+        200
+      )
+    );
+  } catch (error) {
+    console.error("Error restoring training:", error);
+    return res
+      .status(500)
+      .json(errorResponse("Failed to restore training", 500));
+  }
+};
