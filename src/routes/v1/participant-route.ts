@@ -7,6 +7,7 @@ import {
   updateParticipant,
   deleteParticipant,
   changeStatusParticipant,
+  restoreParticipant
 } from "@/controller/admin/participant-management/participant-management-controller";
 import {
   authMiddleware,
@@ -48,5 +49,9 @@ router.put("/change-status-participant/:id", [
   onlyAdminMiddleware,
   changeStatusParticipant,
 ]);
-
+router.put("/restore-participant/:id", [
+  authMiddleware,
+  onlyAdminMiddleware,
+  restoreParticipant,
+]);
 export default router;

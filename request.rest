@@ -364,6 +364,12 @@ Authorization: Bearer {{token}}
     "status" : "sedangBerlangsung"
 }
 
+###
+PUT http://localhost:5000/api/v1/participant/restore-participant/148bccde-6c45-428d-bd7c-40f5676836f0
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
 
 
 
