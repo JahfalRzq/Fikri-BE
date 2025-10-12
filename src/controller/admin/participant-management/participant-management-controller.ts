@@ -8,125 +8,120 @@ import { trainingParticipantCategory } from "@/model/training-participant-catego
 import {
   successResponse,
   validationResponse,
+  errorResponse
 } from "@/utils/response";
-import { trainingParticipant,statusTraining } from "@/model/training-participant";
+import { trainingParticipant, statusTraining } from "@/model/training-participant";
+import { certificate } from "@/model/certificate";
 
 const trainingRepository = AppDataSource.getRepository(training);
 const userRepository = AppDataSource.getRepository(user);
 const participantRepository = AppDataSource.getRepository(participant);
 const trainingParticipantRepository = AppDataSource.getRepository(trainingParticipant)
 const trainingParticipantCategoryRepository = AppDataSource.getRepository(trainingParticipantCategory);
+const certificateRepository = AppDataSource.getRepository(certificate)
 
 
 
 export const getParticipantsByTrainingId = async (req: Request, res: Response) => {
-  // try {
-  //   const trainingId = req.params.id;
+  try {
+    const trainingId = req.params.id;
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
+    const search = (req.query.search as string) || "";
+    const status = (req.query.status as string) || "";
+    const skip = (page - 1) * limit;
 
-  //   // Query params
-  //   const page = parseInt(req.query.page as string, 10) || 1;
-  //   const limit = parseInt(req.query.limit as string, 10) || 10;
-  //   const search = (req.query.search as string) || "";
-  //   const status = (req.query.status as string) || ""; // ✅ filter status
+    const queryBuilder = participantRepository
+      .createQueryBuilder("participant")
+      .leftJoinAndSelect("participant.user", "user")
+      .leftJoinAndSelect("participant.trainingParticipant", "tp")
+      .leftJoinAndSelect("tp.training", "training")
+      .leftJoinAndSelect("training.trainingCategory", "trainingCategory")
+      .leftJoinAndSelect("trainingCategory.category", "category").orderBy("participant.createdAt", "DESC");
 
-  //   const skip = (page - 1) * limit;
+    // ✅ Filter hanya peserta dalam training tertentu
+    if (trainingId) {
+      queryBuilder.andWhere("training.id = :trainingId", { trainingId });
+    }
 
-  //   // 🔍 Build query dari participantRepository
-  //   const queryBuilder = participantRepository
-  //     .createQueryBuilder("participant")
-  //     .leftJoinAndSelect("participant.user", "user")
-  //     .leftJoinAndSelect("participant.trainingParticipant", "tp")
-  //     .leftJoinAndSelect("tp.training", "training")
-  //     .orderBy("participant.createdAt", "DESC");
+    // ✅ Filter status training (optional)
+    if (status && Object.values(statusTraining).includes(status as statusTraining)) {
+      queryBuilder.andWhere("tp.status = :status", { status });
+    }
 
-  //   // ✅ Filter hanya peserta yang terdaftar di training tertentu
-  //   if (trainingId) {
-  //     queryBuilder.andWhere("training.id = :trainingId", { trainingId });
-  //   }
+    // ✅ Search multi-field
+    if (search) {
+      queryBuilder.andWhere(
+        `(participant.firstName LIKE :search
+          OR participant.lastName LIKE :search
+          OR participant.email LIKE :search
+          OR user.userName LIKE :search
+          OR user.email LIKE :search)`,
+        { search: `%${search}%` }
+      );
+    }
 
-  //   // ✅ Filter berdasarkan status (opsional)
-  //   if (status && Object.values(statusTraining).includes(status as statusTraining)) {
-  //     queryBuilder.andWhere("tp.status = :status", { status });
-  //   }
+    // ✅ Pagination
+    queryBuilder.skip(skip).take(limit);
 
-  //   // ✅ Multi-field search
-  //   if (search) {
-  //     queryBuilder.andWhere(
-  //       `(participant.firstName LIKE :search 
-  //         OR participant.lastName LIKE :search 
-  //         OR participant.email LIKE :search 
-  //         OR user.userName LIKE :search 
-  //         OR user.email LIKE :search)`,
-  //       { search: `%${search}%` }
-  //     );
-  //   }
+    const [participants, totalCount] = await queryBuilder.getManyAndCount();
 
-  //   // ✅ Pagination
-  //   queryBuilder.skip(skip).take(limit);
+    // ✅ Transform hasil
+    const safeData = participants.map((p) => {
+      const trainingInfo = p.trainingParticipant.find((tp: any) => tp.training?.id === trainingId);
 
-  //   const [participants, totalCount] = await queryBuilder.getManyAndCount();
+      // Ekstrak kategori dari trainingCategory
+      const categoriesArray = trainingInfo?.training?.trainingCategory?.map((tc: any) => tc.category) || [];
 
-  //   // ✅ Transform hasil agar rapi + tampilkan semua training yang pernah diikuti
-  //   const safeData = participants.map((p) => {
-  //     const trainingsArray = Array.isArray(p.trainingParticipant)
-  //       ? p.trainingParticipant
-  //       : p.trainingParticipant
-  //       ? [p.trainingParticipant]
-  //       : []; // aman jika bukan array
+      // Ambil kategori pertama dari array, atau null jika tidak ada
+      const firstCategory = categoriesArray.length > 0 ? categoriesArray[0] : null;
 
-  //     return {
-  //       id: p.id,
-  //       firstName: p.firstName,
-  //       lastName: p.lastName,
-  //       email: p.email,
-  //       company: p.company,
-  //       jobTitle: p.jobTitle,
-  //       phone: p.phone,
-  //       message: p.message,
-  //       createdAt: p.createdAt,
-  //       user: p.user
-  //         ? {
-  //             id: p.user.id,
-  //             userName: p.user.userName,
-  //             role: p.user.role,
-  //             image: p.user.image,
-  //           }
-  //         : null,
-  //       trainings: trainingsArray.map((tp: any) => ({
-  //         trainingParticipantId: tp.id,
-  //         status: tp.status,
-  //         joinedAt: tp.createdAt,
-  //         training: tp.training
-  //           ? {
-  //               id: tp.training.id,
-  //               name: tp.training.trainingName,
-  //               startDate: tp.training.startDateTraining,
-  //               endDate: tp.training.endDateTraining,
-  //             }
-  //           : null,
-  //       })),
-  //     };
-  //   });
+      return {
+        id: p.id,
+        firstName: p.firstName,
+        lastName: p.lastName,
+        email: p.email,
+        company: p.company,
+        jobTitle: p.jobTitle,
+        phone: p.phone,
+        message: p.message,
+        createdAt: p.createdAt,
+        user: p.user
+          ? {
+            id: p.user.id,
+            userName: p.user.userName,
+            role: p.user.role,
+            image: p.user.imageAvatar,
+          }
+          : null,
+        status: trainingInfo?.status ?? "unknown",
+        training: trainingInfo?.training
+          ? {
+            id: trainingInfo.training.id,
+            trainingName: trainingInfo.training.trainingName,
+            startDateTraining: trainingInfo.training.startDateTraining,
+            endDateTraining: trainingInfo.training.endDateTraining,
+            category: firstCategory,
+          }
+          : null,
+      };
+    });
 
-  //   const totalPages = Math.ceil(totalCount / limit);
-
-  //   return res.status(200).send(
-  //     successResponse(
-  //       "Get Participants by Training ID Success",
-  //       {
-  //         data: safeData,
-  //         totalCount,
-  //         currentPage: page,
-  //         totalPages,
-  //       },
-  //       200
-  //     )
-  //   );
-  // } catch (error: any) {
-  //   return res.status(500).json({
-  //     message: error instanceof Error ? error.message : "Unknown error occurred",
-  //   });
-  // }
+    return res.status(200).send(
+      successResponse(
+        "Get Participants by Training ID Success",
+        {
+          data: safeData,
+          totalCount,
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+        200
+      )
+    );
+  } catch (error: any) {
+    return res.status(500).send(errorResponse(error.message, 500));
+  }
 };
 
 
@@ -250,36 +245,36 @@ export const getAllParticipant = async (req: Request, res: Response) => {
 
       user: p.user
         ? {
-            id: p.user.id,
-            userName: p.user.userName,
-            role: p.user.role,
-            image: p.user.imageAvatar,
-          }
+          id: p.user.id,
+          userName: p.user.userName,
+          role: p.user.role,
+          image: p.user.imageAvatar,
+        }
         : null,
 
       trainingParticipant: Array.isArray(p.trainingParticipant)
         ? p.trainingParticipant.map((tp) => ({
-            id: tp.id,
-            status: tp.status,
-            training: tp.training
-              ? {
-                  id: tp.training.id,
-                  trainingName: tp.training.trainingName,
-                  price: tp.training.price,
-                  startDateTraining: tp.training.startDateTraining,
-                  endDateTraining: tp.training.endDateTraining,
-                  category:
-                    tp.training.trainingCategory &&
-                    tp.training.trainingCategory.length > 0
-                      ? tp.training.trainingCategory.map((tc) => ({
-                          id: tc.id,
-                          name: tc.category?.categoryName,
-                          code: tc.category?.trainingCode,
-                        }))
-                      : [],
-                }
-              : null,
-          }))
+          id: tp.id,
+          status: tp.status,
+          training: tp.training
+            ? {
+              id: tp.training.id,
+              trainingName: tp.training.trainingName,
+              price: tp.training.price,
+              startDateTraining: tp.training.startDateTraining,
+              endDateTraining: tp.training.endDateTraining,
+              category:
+                tp.training.trainingCategory &&
+                  tp.training.trainingCategory.length > 0
+                  ? tp.training.trainingCategory.map((tc) => ({
+                    id: tc.id,
+                    name: tc.category?.categoryName,
+                    code: tc.category?.trainingCode,
+                  }))
+                  : [],
+            }
+            : null,
+        }))
         : [],
     }));
 
@@ -340,40 +335,40 @@ export const getParticipantById = async (req: Request, res: Response) => {
 
       user: participantRecord.user
         ? {
-            id: participantRecord.user.id,
-            userName: participantRecord.user.userName,
-            role: participantRecord.user.role,
-            image: participantRecord.user.imageAvatar,
-          }
+          id: participantRecord.user.id,
+          userName: participantRecord.user.userName,
+          role: participantRecord.user.role,
+          image: participantRecord.user.imageAvatar,
+        }
         : null,
 
       trainings:
         Array.isArray(participantRecord.trainingParticipant) &&
-        participantRecord.trainingParticipant.length > 0
+          participantRecord.trainingParticipant.length > 0
           ? participantRecord.trainingParticipant.map((tp) => ({
-              trainingParticipantId: tp.id,
-              status: tp.status,
-              training: tp.training
-                ? {
-                    id: tp.training.id,
-                    trainingName: tp.training.trainingName,
-                    price: tp.training.price,
-                    startDateTraining: tp.training.startDateTraining,
-                    endDateTraining: tp.training.endDateTraining,
-                    createdAt: tp.training.createdAt,
-                    updatedAt: tp.training.updatedAt,
-                    category:
-                      tp.training.trainingCategory &&
-                      tp.training.trainingCategory.length > 0
-                        ? tp.training.trainingCategory.map((tc) => ({
-                            id: tc.id,
-                            name: tc.category?.categoryName,
-                            code: tc.category?.trainingCode,
-                          }))
-                        : [],
-                  }
-                : null,
-            }))
+            trainingParticipantId: tp.id,
+            status: tp.status,
+            training: tp.training
+              ? {
+                id: tp.training.id,
+                trainingName: tp.training.trainingName,
+                price: tp.training.price,
+                startDateTraining: tp.training.startDateTraining,
+                endDateTraining: tp.training.endDateTraining,
+                createdAt: tp.training.createdAt,
+                updatedAt: tp.training.updatedAt,
+                category:
+                  tp.training.trainingCategory &&
+                    tp.training.trainingCategory.length > 0
+                    ? tp.training.trainingCategory.map((tc) => ({
+                      id: tc.id,
+                      name: tc.category?.categoryName,
+                      code: tc.category?.trainingCode,
+                    }))
+                    : [],
+              }
+              : null,
+          }))
           : [],
     };
 
@@ -394,162 +389,233 @@ export const getParticipantById = async (req: Request, res: Response) => {
 
 
 
-
 export const createParticipant = async (req: Request, res: Response) => {
+  // Skema validasi yang fleksibel untuk menangani kedua kasus
   const createParticipantSchema = (input: any) =>
     Joi.object({
-      email: Joi.string().email().optional(),
-      firstName: Joi.string().optional(),
-      lastName: Joi.string().optional(),
-      company: Joi.string().optional(),
-      companyAddress: Joi.string().optional(),
-      phone: Joi.string().optional(),
-      jobTitle: Joi.string().optional(),
-      officePhone: Joi.string().optional(),
-      message: Joi.string().optional(),
       training: Joi.string().required(),
-      isExisting: Joi.boolean().required(),
-      participantId: Joi.string().optional(),
-      user: Joi.string().required(),
+      participants: Joi.array().items(
+        Joi.object({
+          // Flag wajib untuk membedakan alur
+          isExisting: Joi.boolean().required(),
+
+          // Wajib jika isExisting: true
+          participantId: Joi.string().when('isExisting', { is: true, then: Joi.required() }),
+
+          // Wajib jika isExisting: false
+          email: Joi.string().email().when('isExisting', { is: false, then: Joi.required() }),
+          firstName: Joi.string().when('isExisting', { is: false, then: Joi.required() }),
+          lastName: Joi.string().when('isExisting', { is: false, then: Joi.required() }),
+          user: Joi.string().when('isExisting', { is: false, then: Joi.required() }),
+          signatoryName: Joi.string().when('isExisting', { is: false, then: Joi.required() }),
+          signatoryPosition: Joi.string().when('isExisting', { is: false, then: Joi.required() }),
+          ttdImage: Joi.string().allow("").when('isExisting', { is: false, then: Joi.required() }),
+
+          // Field opsional untuk isExisting: false
+          company: Joi.string().optional(),
+          companyAddress: Joi.string().optional(),
+          phone: Joi.string().optional(),
+          jobTitle: Joi.string().optional(),
+          officePhone: Joi.string().optional(),
+          message: Joi.string().optional(),
+        })
+      ).min(1).required(),
     }).validate(input);
 
   try {
     const body = req.body;
-    const schema = createParticipantSchema(body);
-    if ("error" in schema) {
-      return res.status(422).send(validationResponse(schema));
+    const { error } = createParticipantSchema(body);
+    if (error) {
+      return res.status(422).send(validationResponse({ error }));
     }
 
+    // Ambil data training satu kali di luar loop
     const trainingRec = await trainingRepository.findOne({
       where: { id: body.training },
-      relations: ["trainingCategory", "trainingCategory.category"],
+      relations: ["trainingCategory", "trainingCategory.category", "trainingCoach"],
     });
+
     if (!trainingRec) {
       return res.status(404).json({ msg: "Training Not Found" });
     }
 
-    let selectedParticipant: participant | null = null;
-
-    // ✅ CASE: Existing participant
-    if (body.isExisting && body.participantId) {
-      selectedParticipant = await participantRepository.findOne({
-        where: { id: body.participantId },
-        relations: ["user"],
+    if (!trainingRec.trainingCoach) {
+      return res.status(400).json({
+        msg: "Training coach is missing — please assign a coach before adding participants.",
       });
+    }
 
-      if (!selectedParticipant) {
-        return res.status(404).json({ msg: "Participant Not Found" });
-      }
+    const successfulCreations: any[] = [];
+    const failedCreations: any[] = [];
 
-      // cek apakah sudah ada relasi
-      const existingRel = await trainingParticipantRepository.findOne({
-        where: {
-          training: { id: trainingRec.id },
-          participant: { id: selectedParticipant.id },
-        },
-      });
+    // Lakukan loop untuk setiap peserta dalam array
+    for (const participantData of body.participants) {
+      try {
+        // --- CASE 1: EXISTING PARTICIPANT ---
+        if (participantData.isExisting) {
+          const selectedParticipant = await participantRepository.findOne({
+            where: { id: participantData.participantId },
+            relations: ["user"],
+          });
 
-      if (existingRel) {
-        if (
-          existingRel.status === statusTraining.belumMulai ||
-          existingRel.status === statusTraining.sedangBerlangsung
-        ) {
-          return res.status(409).json({
-            msg: "Participant already registered and still active in this training",
+          if (!selectedParticipant) {
+            failedCreations.push({ participantId: participantData.participantId, reason: "Participant Not Found" });
+            continue;
+          }
+
+          if (!selectedParticipant.user) {
+            failedCreations.push({ participantId: participantData.participantId, reason: "Associated user not found for this participant" });
+            continue;
+          }
+
+          const existingRel = await trainingParticipantRepository.findOne({
+            where: {
+              training: { id: trainingRec.id },
+              participant: { id: selectedParticipant.id },
+            },
+          });
+
+          if (existingRel) {
+            failedCreations.push({ participantId: participantData.participantId, reason: "Participant already registered in this training" });
+            continue;
+          }
+
+          // Proses pembuatan relasi baru
+          const newTP = new trainingParticipant();
+          newTP.training = trainingRec;
+          newTP.participant = selectedParticipant;
+          newTP.status = statusTraining.belumMulai;
+          newTP.coach = trainingRec.trainingCoach;
+          newTP.startDateTraining = trainingRec.startDateTraining;
+          newTP.endDateTraining = trainingRec.endDateTraining;
+
+          // Berikan nilai default untuk signatory
+          newTP.signatoryName = `${selectedParticipant.firstName} ${selectedParticipant.lastName}`;
+          newTP.signatoryPosition = "Peserta";
+          newTP.ttdImage = ""; // Kosongkan atau isi dengan URL placeholder
+          await trainingParticipantRepository.save(newTP);
+
+          // Buat trainingParticipantCategory
+          for (const tc of trainingRec.trainingCategory) {
+            const newTPC = new trainingParticipantCategory();
+            (newTPC as any).trainingParticipant = [newTP];
+            (newTPC as any).category = tc.category;
+            await trainingParticipantCategoryRepository.save(newTPC);
+          }
+
+          // Buat certificate
+          const cert = new certificate();
+          cert.trainingParticipant = newTP;
+          cert.imageUrl = "";
+          cert.noLiscense = "";
+          cert.expiredAt = new Date();
+          await certificateRepository.save(cert);
+
+          // Kaitkan certificate ke trainingParticipant
+          newTP.certificate = cert;
+          await trainingParticipantRepository.save(newTP);
+
+          successfulCreations.push({
+            participantId: selectedParticipant.id,
+            name: `${selectedParticipant.firstName} ${selectedParticipant.lastName}`,
+            status: "Added as Existing"
+          });
+
+        } else {
+          // --- CASE 2: NEW PARTICIPANT ---
+          const userRecord = await userRepository.findOneBy({ id: participantData.user });
+          if (!userRecord) {
+            failedCreations.push({ name: participantData.firstName, reason: "User Not Found" });
+            continue;
+          }
+
+          const newParticipant = new participant();
+          newParticipant.email = participantData.email;
+          newParticipant.firstName = participantData.firstName;
+          newParticipant.lastName = participantData.lastName;
+          newParticipant.company = participantData.company;
+          newParticipant.companyAddress = participantData.companyAddress;
+          newParticipant.phone = participantData.phone;
+          newParticipant.jobTitle = participantData.jobTitle;
+          newParticipant.officePhone = participantData.officePhone;
+          newParticipant.message = participantData.message;
+          newParticipant.user = userRecord;
+          await participantRepository.save(newParticipant);
+
+          const newTP = new trainingParticipant();
+          newTP.training = trainingRec;
+          newTP.participant = newParticipant;
+          newTP.status = statusTraining.belumMulai;
+          newTP.coach = trainingRec.trainingCoach;
+          newTP.signatoryName = participantData.signatoryName;
+          newTP.signatoryPosition = participantData.signatoryPosition;
+          newTP.ttdImage = participantData.ttdImage;
+          newTP.startDateTraining = trainingRec.startDateTraining;
+          newTP.endDateTraining = trainingRec.endDateTraining;
+          await trainingParticipantRepository.save(newTP);
+
+          // Buat trainingParticipantCategory
+          for (const tc of trainingRec.trainingCategory) {
+            const newTPC = new trainingParticipantCategory();
+            (newTPC as any).trainingParticipant = [newTP];
+            (newTPC as any).category = tc.category;
+            await trainingParticipantCategoryRepository.save(newTPC);
+          }
+
+          // Buat certificate
+          const cert = new certificate();
+          cert.trainingParticipant = newTP;
+          cert.imageUrl = "";
+          cert.noLiscense = "";
+          cert.expiredAt = new Date();
+          await certificateRepository.save(cert);
+
+          // Kaitkan certificate ke trainingParticipant
+          newTP.certificate = cert;
+          await trainingParticipantRepository.save(newTP);
+
+          successfulCreations.push({
+            participantId: newParticipant.id,
+            name: `${newParticipant.firstName} ${newParticipant.lastName}`,
+            status: "Created as New"
           });
         }
+      } catch (loopError: any) {
+        failedCreations.push({
+          participantId: participantData.participantId || 'N/A',
+          name: participantData.firstName || 'N/A',
+          reason: loopError.message || 'Unknown error during processing'
+        });
       }
-
-      // buat relasi baru
-      const newRel = new trainingParticipant();
-      newRel.training = trainingRec;
-      newRel.participant = selectedParticipant;
-      newRel.status = statusTraining.belumMulai;
-
-      await trainingParticipantRepository.save(newRel);
-
-      // 🔹 buat trainingParticipantCategory berdasarkan trainingCategory
-      for (const tc of trainingRec.trainingCategory) {
-        const newTPC = new trainingParticipantCategory();
-        // karena modelnya array, kita cast agar tidak error
-        (newTPC as any).trainingParticipant = [newRel];
-        (newTPC as any).category = tc.category;
-        await trainingParticipantCategoryRepository.save(newTPC);
-      }
-
-      return res.status(201).send(
-        successResponse(
-          "Existing participant added to training",
-          { participant: selectedParticipant },
-          201
-        )
-      );
     }
 
-    // ✅ CASE: New participant
-    const userRecord = await userRepository.findOneBy({ id: body.user });
-    if (!userRecord) {
-      return res.status(404).json({ msg: "User Not Found" });
-    }
-
-    const newParticipant = new participant();
-    newParticipant.email = body.email;
-    newParticipant.firstName = body.firstName;
-    newParticipant.lastName = body.lastName;
-    newParticipant.company = body.company;
-    newParticipant.companyAddress = body.companyAddress;
-    newParticipant.phone = body.phone;
-    newParticipant.jobTitle = body.jobTitle;
-    newParticipant.officePhone = body.officePhone;
-    newParticipant.message = body.message;
-    newParticipant.user = userRecord;
-
-    await participantRepository.save(newParticipant);
-
-    const newParticipantTraining = new trainingParticipant();
-    newParticipantTraining.training = trainingRec;
-    newParticipantTraining.participant = newParticipant;
-    newParticipantTraining.status = statusTraining.belumMulai;
-
-    await trainingParticipantRepository.save(newParticipantTraining);
-
-    // 🔹 buat trainingParticipantCategory juga
-    for (const tc of trainingRec.trainingCategory) {
-      const newTPC = new trainingParticipantCategory();
-      (newTPC as any).trainingParticipant = [newParticipantTraining];
-      (newTPC as any).category = tc.category;
-      await trainingParticipantCategoryRepository.save(newTPC);
-    }
-
+    // Kirim response berupa rangkuman hasil
     return res.status(201).send(
       successResponse(
-        "New participant created and added to training",
-        { participant: newParticipant },
+        `Process complete. Success: ${successfulCreations.length}, Failed: ${failedCreations.length}`,
+        {
+          success: successfulCreations,
+          failures: failedCreations,
+        },
         201
       )
     );
-  } catch (error) {
+
+  } catch (error: any) {
     return res.status(500).json({
-      message: error instanceof Error ? error.message : "Unknown error occurred",
+      message: error.message || "Unknown error occurred",
     });
   }
 };
 
 
 
-
-
-
-
-
-
-
-
 export const updateParticipant = async (req: Request, res: Response) => {
+  // ✅ Disesuaikan: Skema validasi diperbarui untuk menerima field baru
   const updateParticipantSchema = (input: any) =>
     Joi.object({
-      id: Joi.string().required(), // participant id wajib
-      training: Joi.string().required(), // training id wajib
+      id: Joi.string().required(), // participant id
+      training: Joi.string().required(), // training id
       email: Joi.string().email().optional(),
       firstName: Joi.string().optional(),
       lastName: Joi.string().optional(),
@@ -560,6 +626,10 @@ export const updateParticipant = async (req: Request, res: Response) => {
       officePhone: Joi.string().optional(),
       message: Joi.string().optional(),
       status: Joi.string().valid("belumMulai", "sedangBerlangsung", "selesai", "tidakSelesai").optional(),
+      // Field baru ditambahkan sebagai opsional
+      signatoryName: Joi.string().optional(),
+      signatoryPosition: Joi.string().optional(),
+      ttdImage: Joi.string().allow("").optional(),
     }).validate(input);
 
   try {
@@ -569,7 +639,7 @@ export const updateParticipant = async (req: Request, res: Response) => {
       return res.status(422).send(validationResponse(schema));
     }
 
-    // 🔹 Ambil participant
+    // 🔹 Ambil participant (tidak ada perubahan)
     const participantRec = await participantRepository.findOne({
       where: { id: body.id },
       relations: ["user"],
@@ -579,17 +649,16 @@ export const updateParticipant = async (req: Request, res: Response) => {
       return res.status(404).json({ msg: "Participant Not Found" });
     }
 
-    // 🔹 Ambil training
+    // 🔹 Ambil training (tidak ada perubahan)
     const trainingRec = await trainingRepository.findOne({
       where: { id: body.training },
-      relations: ["trainingCategory", "trainingCategory.category"],
     });
 
     if (!trainingRec) {
       return res.status(404).json({ msg: "Training Not Found" });
     }
 
-    // 🔹 Update info participant (jika ada perubahan)
+    // 🔹 Update info participant (tidak ada perubahan)
     participantRec.email = body.email ?? participantRec.email;
     participantRec.firstName = body.firstName ?? participantRec.firstName;
     participantRec.lastName = body.lastName ?? participantRec.lastName;
@@ -602,35 +671,27 @@ export const updateParticipant = async (req: Request, res: Response) => {
 
     await participantRepository.save(participantRec);
 
-    // 🔹 Ambil relasi trainingParticipant
-    let participantTraining = await trainingParticipantRepository.findOne({
+    // 🔹 Ambil relasi trainingParticipant (tidak ada perubahan)
+    const participantTraining = await trainingParticipantRepository.findOne({
       where: {
         training: { id: trainingRec.id },
         participant: { id: participantRec.id },
       },
-      relations: ["training", "participant"],
     });
 
+    // Jika relasi tidak ditemukan, berarti ada data yang tidak konsisten
     if (!participantTraining) {
-      // jika belum ada, buat baru
-      participantTraining = new trainingParticipant();
-      participantTraining.training = trainingRec;
-      participantTraining.participant = participantRec;
-      participantTraining.status = body.status ?? statusTraining.belumMulai;
-      await trainingParticipantRepository.save(participantTraining);
-
-      // Buat juga trainingParticipantCategory
-      for (const tc of trainingRec.trainingCategory) {
-        const newTPC = new trainingParticipantCategory();
-        (newTPC as any).trainingParticipant = [participantTraining];
-        (newTPC as any).category = tc.category;
-        await trainingParticipantCategoryRepository.save(newTPC);
-      }
-    } else {
-      // jika sudah ada, update status
-      participantTraining.status = body.status ?? participantTraining.status;
-      await trainingParticipantRepository.save(participantTraining);
+      return res.status(404).json({ msg: "Participant is not registered in this specific training." });
     }
+
+    // ✅ Disesuaikan: Update status dan informasi penanda tangan di relasi trainingParticipant
+    participantTraining.status = body.status ?? participantTraining.status;
+    participantTraining.signatoryName = body.signatoryName ?? participantTraining.signatoryName;
+    participantTraining.signatoryPosition = body.signatoryPosition ?? participantTraining.signatoryPosition;
+    participantTraining.ttdImage = body.ttdImage ?? participantTraining.ttdImage;
+
+    await trainingParticipantRepository.save(participantTraining);
+
 
     return res.status(200).send(
       successResponse(

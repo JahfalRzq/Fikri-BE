@@ -1,6 +1,8 @@
 request rest :
 
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImI4ODBlMjY4LWYwZjQtNDE1Yy1iMGVhLWI1MDM5Yzc3ODk0OSIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0xMC0wN1QyMToxMzozMi4wNTlaIiwiaWF0IjoxNzU5ODcyNTM0LCJleHAiOjE3NTk5NTg5MzR9.D2VuPSjwcNBwVlRoDiWWovSAtfhrlh2aZ0IcII6HY9A
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjdiM2Y1NjEzLTQ4YjgtNDU5Mi04MjlmLTI5ZGMxMDY2YjEzZiIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0xMC0xMlQxMTo0MDozOC42OTFaIiwiaWF0IjoxNzYwMjcyNTAwLCJleHAiOjE3NjAzNTg5MDB9.IXewrogBsOogY6vbr7arxxfrw5BfzanXgeAHnFU1Ark
+
+
 
 ###
 GET http://localhost:5000/api/v1/seeder/userSeeder
@@ -111,8 +113,8 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {     
-    "username"  : "TESTParticipant2",
-    "password"  : "Participant123!",
+    "username"  : "TESTAdjustEndpoint",
+    "password"  : "TESTAdjustEndpoint123!",
     "role"      : "PARTICIPANT"
 
 }
@@ -235,7 +237,7 @@ Authorization: Bearer {{token}}
 
 
 ###
-GET  http://localhost:5000/api/v1/training/get-training-by-id/ee88c995-eb07-452b-bbe1-a7b9b9282a63
+GET  http://localhost:5000/api/v1/training/get-training-by-id/89cfea6f-376c-4a77-881a-416b999a6cc7
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -248,8 +250,8 @@ Authorization: Bearer {{token}}
 
 {
   "trainingName": "Digital Marketing Mastery",
-  "categoryId": "daf7ed2b-fd72-4492-952a-266119626421",
-  "coachId": "059e00ad-d3b6-4ba2-8e06-c131aa65a2f2",
+  "categoryId": "fe44508a-30fc-4128-bfad-ce4e2dc3569c",
+  "coachId": "3c31593d-e696-480b-bfcb-28878ab09ffb",
   "price": 2500000,
   "startDateTraining": "2025-11-10",
   "endDateTraining": "2025-11-15",
@@ -268,20 +270,20 @@ Authorization: Bearer {{token}}
 {
   "trainingName": "Pelatihan Manajemen Proyek Lanjutan",
   "price": 4500000,
+  "categoryId": "fe44508a-30fc-4128-bfad-ce4e2dc3569c",
   "coachId": "3c31593d-e696-480b-bfcb-28878ab09ffb",
   "startDateTraining": "2025-12-10",
   "endDateTraining": "2025-12-20",
   "signatoryName": "Dr. Maya Rahman",
   "signatoryPosition": "Head of Training Department",
-  "ttdImage": "https://cdn.example.com/signatures/maya.png",
-  "categoryId": "80a6e48f-9163-411a-8568-c7a02a006923"
+  "ttdImage": "https://cdn.example.com/signatures/maya.png"
 }
 
 
 
 
 ###
-DELETE   http://localhost:5000/api/v1/training/delete-training/89cfea6f-376c-4a77-881a-416b999a6cc7
+DELETE  http://localhost:5000/api/v1/training/delete-training/89cfea6f-376c-4a77-881a-416b999a6cc7
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -297,36 +299,65 @@ Authorization: Bearer {{token}}
 
 
 ###
-GET  http://localhost:5000/api/v1/participant/get-participant-by-id/b2bc6117-c7d6-49e3-94d2-fff0dd026ca5
+GET  http://localhost:5000/api/v1/participant/get-participant-by-id/89cfea6f-376c-4a77-881a-416b999a6cc7
 Authorization: Bearer {{token}}
 
 ###
-GET http://localhost:5000/api/v1/participant/get-participant-by-training-id/8ec89ef3-027b-4b34-b166-5f2b35e8cad3?page=&limit=&search=
-Content-Type: application/json
+GET http://localhost:5000/api/v1/participant/get-participant-by-training-id/536eb561-9da9-4239-b236-8c727937cd0d
 Authorization: Bearer {{token}}
 
+
+// existing is false
 ###
 POST  http://localhost:5000/api/v1/participant/create-participant
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-    "email": "jane.smith@example.com",
-    "firstName": "Jane",
-    "lastName": "Smith",
-    "company": "Innovate Inc",
-    "companyAddress": "456 Innovate Ave",
-    "phone": "1122334455",
-    "jobTitle": "Data Analyst",
-    "officePhone": "5544332211",
-    "message": "Looking for advanced JavaScript training",
-    "training": "97daef3b-b5c9-49d9-93c1-8208da4e2b65",
-    "user" : "0f2fc678-c006-478d-b7af-75ae1e908188",
-    "isExisting" : true,
-    "participantId": "766626cf-6c82-486f-aea2-abe1e516d3c6"
-
-
+  "training": "afec26ea-8013-4cfe-beab-1751668a6c01",
+  "participants": [
+    {
+      "isExisting": false,
+      "email": "peserta.baru@example.com",
+      "firstName": "Andi",
+      "lastName": "Wijaya",
+      "company": "PT Sejahtera Abadi",
+      "companyAddress": "Jl. Merdeka No. 20",
+      "phone": "081298765432",
+      "jobTitle": "Staff Marketing",
+      "officePhone": "0215550123",
+      "message": "Pendaftaran untuk pelatihan Digital Marketing.",
+      "user": "e3f61fee-fc90-4bab-b6e4-d9c4d3b3d917",
+      "signatoryName": "Dr. Rina Hartati, M.T.",
+      "signatoryPosition": "Kepala Bidang Pelatihan",
+      "ttdImage": "https://example.com/signatures/rina.png"
+    }
+  ]
 }
+
+
+
+// existing is true
+###
+POST  http://localhost:5000/api/v1/participant/create-participant
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+{
+  "training": "536eb561-9da9-4239-b236-8c727937cd0d",
+  "participants": [
+    {
+      "isExisting": true,
+      "participantId": "ef4dd204-4239-4c6c-96aa-0d3fdb584757"
+    },
+    {
+      "isExisting": true,
+      "participantId": "232ca3fd-a137-44ee-9efe-651314daf393"
+    }
+  ]
+}
+
 
 
 ###
@@ -370,6 +401,21 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 
+###
+GET http://localhost:5000/api/v1/certificate/get-certificate-by-training-id/afec26ea-8013-4cfe-beab-1751668a6c01
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
+PUT http://localhost:5000/api/v1/certificate/udpate-certificate-by-id/2c4fb1fc-a04d-45f4-9c92-299c2dce3119
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "imageUrl": "https://cdn.example.com/certificates/cert1-updated.png",
+  "noLiscense": "CERT-2025-NEW",
+  "expiredAt": "2027-01-01"
+}
 
 
 
