@@ -1,9 +1,12 @@
 import { Request, Response } from 'express';
 import Joi from 'joi';
 import { AppDataSource } from '@/data-source';
-import { successResponse, validationResponse } from '@/utils/response';
+import { successResponse, validationResponse,errorResponse } from '@/utils/response';
 import { trainingCategory } from '@/model/training-category';
-import { category } from '@/model/category';
+import { In } from "typeorm";
+import { category } from "@/model/category"; // Sesuaikan path jika perlu
+import * as xlsx from "xlsx";
+
 
 const categoryRepository = AppDataSource.getRepository(category)
 
@@ -316,5 +319,100 @@ export const deleteCategory = async (req: Request, res: Response) => {
         return res.status(500).json({
             message: error instanceof Error ? error.message : "Unknown error occurred",
         });
+    }
+};
+
+export const bulkCreateCategories = async (req: Request, res: Response) => {
+    try {
+        // 1. Validasi File Upload
+        if (!req.file) {
+            return res.status(400).send(errorResponse("No Excel file uploaded.", 400));
+        }
+
+        // 2. Baca dan Parse File Excel
+        const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const dataFromExcel: any[] = xlsx.utils.sheet_to_json(worksheet);
+
+        if (dataFromExcel.length === 0) {
+            return res.status(400).send(errorResponse("Excel file is empty.", 400));
+        }
+
+        // 3. Validasi Data & Cek Duplikasi
+        const newCategories: category[] = [];
+        const validationErrors: string[] = [];
+        const trainingCodesInFile = new Set<string>();
+
+        // Kumpulkan semua trainingCode dari Excel untuk dicek ke DB sekali saja
+        const codesToCheck = dataFromExcel
+            .map(row => row.trainingCode)
+            .filter(code => code); // Filter yang kosong atau null
+
+        // Cek duplikasi di database dalam satu query
+        const existingCategories = await categoryRepository.findBy({
+            trainingCode: In(codesToCheck)
+        });
+        const existingCodes = new Set(existingCategories.map(cat => cat.trainingCode));
+
+        for (let i = 0; i < dataFromExcel.length; i++) {
+            const row = dataFromExcel[i];
+            const categoryName = row.categoryName;
+            const trainingCode = row.trainingCode;
+
+            // Validasi nama kategori
+            if (!categoryName || typeof categoryName !== 'string' || categoryName.trim() === '') {
+                validationErrors.push(`Row ${i + 2}: categoryName is required.`);
+                continue;
+            }
+
+            if (trainingCode) {
+                // Cek duplikasi di dalam file Excel itu sendiri
+                if (trainingCodesInFile.has(trainingCode)) {
+                    validationErrors.push(`Row ${i + 2}: trainingCode '${trainingCode}' is duplicated in the Excel file.`);
+                    continue;
+                }
+                // Cek duplikasi dengan yang sudah ada di database
+                if (existingCodes.has(trainingCode)) {
+                    validationErrors.push(`Row ${i + 2}: trainingCode '${trainingCode}' already exists in the database.`);
+                    continue;
+                }
+                trainingCodesInFile.add(trainingCode);
+            }
+
+            const newCategory = new category();
+            newCategory.categoryName = categoryName.trim();
+            newCategory.trainingCode = trainingCode ? String(trainingCode).trim() : '';
+            newCategories.push(newCategory);
+        }
+
+        if (validationErrors.length > 0) {
+            const errorMessage = `Validation failed. Errors: ${validationErrors.join(', ')}`;
+            return res.status(422).send(errorResponse(errorMessage, 422));
+        }
+
+        // 4. Simpan ke Database
+        const createdCategories = await categoryRepository.save(newCategories);
+
+        // 5. Kirim Response Sukses
+        return res.status(201).send(
+            successResponse(
+                `${createdCategories.length} categories created successfully.`,
+                {
+                    totalCreated: createdCategories.length,
+                    data: createdCategories,
+                },
+                201
+            )
+        );
+
+    } catch (error) {
+        console.error("Bulk upload error:", error);
+        return res.status(500).send(
+            errorResponse(
+                error instanceof Error ? error.message : "An unknown error occurred.",
+                500
+            )
+        );
     }
 };

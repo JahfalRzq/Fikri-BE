@@ -4,13 +4,18 @@ import {
     getCategoryById,
     createCategory,
     updateCategory,
-    deleteCategory
+    deleteCategory,
+    bulkCreateCategories
  } from "@/controller/admin/training-management/category-controller";
 
  import {
   authMiddleware,
   onlyAdminMiddleware,
 } from "@/middleware/auth-middleware";
+
+import multer from "multer";
+const upload = multer({ storage: multer.memoryStorage() });
+
 
 
 const router = Router();
@@ -40,6 +45,12 @@ router.delete("/delete-category/:id", [
   onlyAdminMiddleware,
   deleteCategory,
 ]);
+
+router.post("/bulk-upload", [
+  upload.single('file'),
+  bulkCreateCategories,
+]);
+
 
 export default router;
 
