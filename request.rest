@@ -1,7 +1,6 @@
 request rest :
 
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjdiM2Y1NjEzLTQ4YjgtNDU5Mi04MjlmLTI5ZGMxMDY2YjEzZiIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0xMC0xMlQxMTo0MDozOC42OTFaIiwiaWF0IjoxNzYwMjcyNTAwLCJleHAiOjE3NjAzNTg5MDB9.IXewrogBsOogY6vbr7arxxfrw5BfzanXgeAHnFU1Ark
-
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjdiM2Y1NjEzLTQ4YjgtNDU5Mi04MjlmLTI5ZGMxMDY2YjEzZiIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0xMC0xMlQxMTo0MDozOC42OTFaIiwiaWF0IjoxNzYwNDcwOTM5LCJleHAiOjE3NjA1NTczMzl9.B3OkzJVzda0LyGiOJxoa0ngidzOb_N00lQGW2BsmFV0
 
 
 ###
@@ -237,7 +236,7 @@ Authorization: Bearer {{token}}
 
 
 ###
-GET  http://localhost:5000/api/v1/training/get-training-by-id/89cfea6f-376c-4a77-881a-416b999a6cc7
+GET  http://localhost:5000/api/v1/training/get-training-by-id/afec26ea-8013-4cfe-beab-1751668a6c01
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -303,7 +302,7 @@ GET  http://localhost:5000/api/v1/participant/get-participant-by-id/89cfea6f-376
 Authorization: Bearer {{token}}
 
 ###
-GET http://localhost:5000/api/v1/participant/get-participant-by-training-id/536eb561-9da9-4239-b236-8c727937cd0d
+GET http://localhost:5000/api/v1/participant/get-participant-by-training-id/afec26ea-8013-4cfe-beab-1751668a6c01
 Authorization: Bearer {{token}}
 
 
@@ -403,7 +402,6 @@ Authorization: Bearer {{token}}
 
 ###
 GET http://localhost:5000/api/v1/certificate/get-certificate-by-training-id/afec26ea-8013-4cfe-beab-1751668a6c01
-Content-Type: application/json
 Authorization: Bearer {{token}}
 
 ###

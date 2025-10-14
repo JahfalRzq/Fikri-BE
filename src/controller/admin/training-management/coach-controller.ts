@@ -3,6 +3,7 @@ import Joi from 'joi';
 import { AppDataSource } from '@/data-source';
 import { errorResponse, successResponse, validationResponse } from '@/utils/response';
 import { coach } from '@/model/coach';
+import * as xlsx from "xlsx";
 
 const trainingCoachRepository = AppDataSource.getRepository(coach);
 
@@ -193,5 +194,70 @@ export const deleteCoach = async (req: Request, res: Response) => {
         return res.status(500).json({
             message: error instanceof Error ? error.message : "Unknown error occurred",
         });
+    }
+};
+
+
+
+export const bulkCreateCoaches = async (req: Request, res: Response) => {
+    try {
+        if (!req.file) {
+            return res.status(400).send(errorResponse("No Excel file uploaded.", 400));
+        }
+
+        const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const dataFromExcel: any[] = xlsx.utils.sheet_to_json(worksheet);
+
+        if (dataFromExcel.length === 0) {
+            return res.status(400).send(errorResponse("Excel file is empty or has no data.", 400));
+        }
+
+        const newCoaches: coach[] = [];
+        const validationErrors: string[] = [];
+
+        for (let i = 0; i < dataFromExcel.length; i++) {
+            const row = dataFromExcel[i];
+            const coachName = row.coachName;
+
+            if (!coachName || typeof coachName !== 'string' || coachName.trim() === '') {
+                validationErrors.push(`Row ${i + 2}: coachName is missing or invalid.`);
+                continue;
+            }
+
+            const newCoach = new coach();
+            newCoach.coachName = coachName.trim();
+            newCoaches.push(newCoach);
+        }
+
+        // ✅ DIUBAH: Perbaiki cara memanggil 'errorResponse'
+        if (validationErrors.length > 0) {
+            // Gabungkan semua error validasi menjadi satu string pesan
+            const errorMessage = `Validation failed for ${validationErrors.length} rows. Errors: ${validationErrors.join(', ')}`;
+            return res.status(422).send(errorResponse(errorMessage, 422));
+        }
+
+        const createdCoaches = await trainingCoachRepository.save(newCoaches);
+
+        return res.status(201).send(
+            successResponse(
+                `${createdCoaches.length} coaches created successfully from Excel file.`,
+                {
+                    totalCreated: createdCoaches.length,
+                    data: createdCoaches,
+                },
+                201
+            )
+        );
+
+    } catch (error) {
+        console.error("Bulk upload error:", error);
+        return res.status(500).send(
+            errorResponse(
+                error instanceof Error ? error.message : "An unknown error occurred during bulk upload.",
+                500
+            )
+        );
     }
 };

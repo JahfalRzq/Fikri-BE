@@ -4,13 +4,18 @@ import {
     getCoachById,
     createCoach,
     updateCoach,
-    deleteCoach
+    deleteCoach,
+    bulkCreateCoaches
  } from "@/controller/admin/training-management/coach-controller";
 
  import {
   authMiddleware,
   onlyAdminMiddleware,
 } from "@/middleware/auth-middleware";
+
+import multer from "multer";
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 
 const router = Router();
@@ -39,6 +44,11 @@ router.delete("/delete-coach/:id", [
   authMiddleware,
   onlyAdminMiddleware,
   deleteCoach,
+]);
+
+router.post("/bulk-upload", [
+  upload.single('file'),
+  bulkCreateCoaches,
 ]);
 
 export default router;
