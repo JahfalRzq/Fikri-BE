@@ -6,7 +6,8 @@ import { successResponse, validationResponse,errorResponse } from "@/utils/respo
 import { coach } from "@/model/coach";
 import { trainingCategory } from "@/model/training-category";
 import { category } from "@/model/category";
-
+import * as xlsx from "xlsx";
+import { In } from "typeorm";
 
 const trainingRepository = AppDataSource.getRepository(training);
 const coachRepository = AppDataSource.getRepository(coach);
@@ -298,6 +299,7 @@ export const createTraining = async (req: Request, res: Response) => {
 
 
 
+
 export const updateTraining = async (req: Request, res: Response) => {
   // ✅ Validasi input (tanpa category di body, karena hanya update link category di trainingCategory)
   const updateTrainingSchema = (input: any) =>
@@ -466,4 +468,117 @@ export const restoreTraining = async (req: Request, res: Response) => {
       .status(500)
       .json(errorResponse("Failed to restore training", 500));
   }
+};
+
+
+
+export const bulkCreateTrainings = async (req: Request, res: Response) => {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+        if (!req.file) {
+            return res.status(400).send(errorResponse("No Excel file uploaded.", 400));
+        }
+
+        const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const dataFromExcel: any[] = xlsx.utils.sheet_to_json(worksheet);
+
+        if (dataFromExcel.length === 0) {
+            return res.status(400).send(errorResponse("Excel file is empty.", 400));
+        }
+
+        // --- ✅ LOGIKA BARU: VALIDASI BERDASARKAN NAMA ---
+
+        const validationErrors: string[] = [];
+        // ✅ DIUBAH: Ganti sintaks [...new Set()] menjadi Array.from(new Set())
+        const categoryNames = Array.from(new Set(dataFromExcel.map(row => row.categoryName).filter(name => name)));
+        const coachNames = Array.from(new Set(dataFromExcel.map(row => row.coachName).filter(name => name)));
+
+        // Ambil semua data yang relevan dari DB dalam dua query efisien
+        const existingCoaches = await coachRepository.findBy({ coachName: In(coachNames) });
+        const existingCategories = await categoryRepository.findBy({ categoryName: In(categoryNames) });
+
+        // Ubah menjadi Map untuk pencarian super cepat (case-insensitive)
+        const coachMap = new Map(existingCoaches.map(c => [c.coachName.toLowerCase(), c]));
+        const categoryMap = new Map(existingCategories.map(cat => [cat.categoryName.toLowerCase(), cat]));
+        
+        const trainingsToCreate: Partial<training>[] = [];
+        const relationsToCreate: { training?: training, category: category }[] = [];
+
+        for (let i = 0; i < dataFromExcel.length; i++) {
+            const row = dataFromExcel[i];
+            const { trainingName, categoryName, coachName, price, startDateTraining, endDateTraining, ttdImage, signatoryPosition, signatoryName } = row;
+            const rowIndex = i + 2;
+
+            if (!trainingName || !categoryName || !coachName || price === undefined /*...cek field lain...*/ ) {
+                validationErrors.push(`Row ${rowIndex}: Missing one or more required fields.`);
+                continue;
+            }
+
+            // Cari coach dan category di Map (case-insensitive)
+            const coach = coachMap.get(String(coachName).toLowerCase());
+            const category = categoryMap.get(String(categoryName).toLowerCase());
+
+            if (!coach) {
+                validationErrors.push(`Row ${rowIndex}: Coach with name '${coachName}' not found in the database.`);
+            }
+            if (!category) {
+                validationErrors.push(`Row ${rowIndex}: Category with name '${categoryName}' not found in the database.`);
+            }
+            if (!coach || !category) continue;
+            
+            // Siapkan data untuk disimpan
+            trainingsToCreate.push({
+                trainingName,
+                price,
+                startDateTraining: new Date(startDateTraining),
+                endDateTraining: new Date(endDateTraining),
+                ttdImage,
+                signatoryPosition,
+                signatoryName,
+                trainingCoach: coach,
+            });
+            relationsToCreate.push({ category });
+        }
+        
+        // --- Akhir Logika Baru ---
+
+        if (validationErrors.length > 0) {
+            await queryRunner.rollbackTransaction();
+            const errorMessage = `Validation failed. Errors: ${validationErrors.join(', ')}`;
+            return res.status(422).send(errorResponse(errorMessage, 422));
+        }
+
+        // Simpan ke Database (tidak ada perubahan di sini)
+        const createdTrainings = await queryRunner.manager.save(training, trainingsToCreate);
+        const trainingCategoriesToCreate = createdTrainings.map((newTraining, index) => {
+            return trainingCategoryRepository.create({
+                training: newTraining,
+                category: relationsToCreate[index].category,
+            });
+        });
+        await queryRunner.manager.save(trainingCategory, trainingCategoriesToCreate);
+
+        await queryRunner.commitTransaction();
+        return res.status(201).send(
+            successResponse(
+                `${createdTrainings.length} trainings created successfully.`,
+                { totalCreated: createdTrainings.length, data: createdTrainings },
+                201
+            )
+        );
+
+    } catch (error) {
+        await queryRunner.rollbackTransaction();
+        console.error("Bulk training upload error:", error);
+        return res.status(500).send(
+            errorResponse(error instanceof Error ? error.message : "An unknown error occurred.", 500)
+        );
+    } finally {
+        await queryRunner.release();
+    }
 };
