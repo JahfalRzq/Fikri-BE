@@ -132,7 +132,121 @@ export const getAllTraining = async (req: Request, res: Response) => {
 };
 
 
+export const getArchivedTrainings = async (req: Request, res: Response) => {
+  try {
+    // 1. Ambil Filter & Paginasi (Logika sama persis)
+    const {
+      trainingName,
+      coachId,
+      categoryId,
+      startDate,
+      endDate,
+      limit: queryLimit,
+      page,
+    } = req.query;
 
+    const limit = queryLimit ? parseInt(queryLimit as string, 10) : 10;
+    const currentPage = page ? parseInt(page as string, 10) : 1;
+    const skip = (currentPage - 1) * limit;
+
+    // 2. Query Builder (Dengan penyesuaian soft delete)
+    const queryBuilder = trainingRepository
+      .createQueryBuilder("training")
+      .withDeleted() // ✅ KUNCI 1: Memberitahu TypeORM untuk mencari di data yang di-soft delete
+      .leftJoinAndSelect("training.trainingCategory", "trainingCategory")
+      .leftJoinAndSelect("trainingCategory.category", "category")
+      .leftJoinAndSelect("training.trainingCoach", "coach")
+      .leftJoinAndSelect("training.trainingParticipant", "trainingParticipant")
+      .leftJoinAndSelect("trainingParticipant.participant", "participant")
+      .orderBy("training.deletedAt", "DESC"); // Urutkan berdasarkan yang baru diarsip
+
+    // ✅ KUNCI 2: Filter HANYA yang sudah di-soft delete
+    queryBuilder.andWhere("training.deletedAt IS NOT NULL");
+
+    // 3. Terapkan Filter (Logika sama persis)
+    if (trainingName) {
+      queryBuilder.andWhere("training.trainingName LIKE :trainingName", {
+        trainingName: `%${trainingName}%`,
+      });
+    }
+    if (categoryId) {
+      queryBuilder.andWhere("category.id = :categoryId", { categoryId });
+    }
+    if (coachId) {
+      queryBuilder.andWhere("coach.id = :coachId", { coachId });
+    }
+    if (startDate && endDate) {
+      queryBuilder.andWhere(
+        "training.startDateTraining >= :startDate AND training.endDateTraining <= :endDate",
+        { startDate, endDate }
+      );
+    }
+
+    // 4. Paginasi (Logika sama persis)
+    queryBuilder.skip(skip).take(limit);
+
+    // 5. Eksekusi Query (Logika sama persis)
+    const [trainings, totalCount] = await queryBuilder.getManyAndCount();
+
+    // 6. Format Response (Logika sama persis)
+    const data = trainings.map((t) => {
+      const categories =
+        t.trainingCategory?.map((tc) => ({
+          id: tc.category?.id,
+          name: tc.category?.categoryName,
+          code: tc.category?.trainingCode,
+        })) || [];
+
+      const participants =
+        t.trainingParticipant?.map((tp) => ({
+          id: tp.participant?.id,
+          name: `${tp.participant?.firstName ?? ""} ${tp.participant?.lastName ?? ""}`.trim(),
+          email: tp.participant?.email,
+          company: tp.participant?.company,
+          status: tp.status,
+        })) || [];
+
+      return {
+        id: t.id,
+        trainingName: t.trainingName,
+        price: t.price,
+        startDateTraining: t.startDateTraining,
+        endDateTraining: t.endDateTraining,
+        coach: t.trainingCoach
+          ? {
+              id: t.trainingCoach.id,
+              name: t.trainingCoach.coachName,
+            }
+          : null,
+        categories,
+        totalParticipants: participants.length,
+        participants,
+        deletedAt: t.deletedAt, // ✅ Tambahkan info kapan diarsip
+      };
+    });
+
+    // 7. Kirim Respons (Pesan disesuaikan)
+    return res.status(200).send(
+      successResponse(
+        "Get All Archived Training Success",
+        {
+          data,
+          totalCount,
+          currentPage,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+        200
+      )
+    );
+  } catch (error) {
+    return res.status(500).send(
+      errorResponse(
+        error instanceof Error ? error.message : "Unknown error occurred",
+        500
+      )
+    );
+  }
+};
 
 export const getTrainingById = async (req: Request, res: Response) => {
   try {

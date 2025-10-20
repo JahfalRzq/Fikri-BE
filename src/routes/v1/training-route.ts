@@ -6,7 +6,8 @@ import {
   updateTraining,
   deleteTraining,
   restoreTraining,
-  bulkCreateTrainings
+  bulkCreateTrainings,
+  getArchivedTrainings
 } from "@/controller/admin/training-management/training-management-controller";
 import {
   authMiddleware,
@@ -23,6 +24,10 @@ const router = Router();
 router.get("/get-all-training", [
   authMiddleware,
   getAllTraining,
+]);
+router.get("/get-all-archived-training", [
+  authMiddleware,
+  getArchivedTrainings,
 ]);
 router.get("/get-training-by-id/:id", [
   authMiddleware,
