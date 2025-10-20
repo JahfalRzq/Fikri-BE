@@ -7,7 +7,8 @@ import {
   updateParticipant,
   deleteParticipant,
   changeStatusParticipant,
-  restoreParticipant
+  restoreParticipant,
+  getArchivedParticipantsByTrainingId
 } from "@/controller/admin/participant-management/participant-management-controller";
 import {
   authMiddleware,
@@ -28,6 +29,11 @@ router.get("/get-participant-by-id/:id", [
 router.get("/get-participant-by-training-id/:id", [
   authMiddleware,
   getParticipantsByTrainingId,
+]);
+router.get("/get-archive-participant-by-training-id/:id", [
+  authMiddleware,
+  onlyAdminMiddleware,
+  getArchivedParticipantsByTrainingId,
 ]);
 router.post("/create-participant", [
   authMiddleware,

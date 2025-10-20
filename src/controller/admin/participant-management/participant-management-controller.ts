@@ -125,8 +125,112 @@ export const getParticipantsByTrainingId = async (req: Request, res: Response) =
   }
 };
 
+export const getArchivedParticipantsByTrainingId = async (req: Request, res: Response) => {
+  try {
+    // Ambil 'id' training dari params, sama seperti di fungsi referensi Anda
+    const trainingId = req.params.id; 
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
+    const search = (req.query.search as string) || "";
+    // Filter status mungkin tidak relevan untuk yang diarsip, tapi bisa ditambahkan jika perlu
+    const skip = (page - 1) * limit;
 
+    // ✅ DIUBAH: Query Builder dimulai dari 'trainingParticipant' (tp)
+    // Ini adalah perubahan KUNCI karena 'tp' yang di-soft delete
+    const queryBuilder = trainingParticipantRepository
+      .createQueryBuilder("tp")
+      .withDeleted() // PENTING: Untuk bisa menemukan data yang di-soft delete
+      .leftJoinAndSelect("tp.participant", "participant")
+      .leftJoinAndSelect("participant.user", "user")
+      .leftJoinAndSelect("tp.training", "training")
+      .leftJoinAndSelect("training.trainingCategory", "trainingCategory")
+      .leftJoinAndSelect("trainingCategory.category", "category")
+      .orderBy("tp.deletedAt", "DESC"); // Urutkan berdasarkan data yang baru diarsip
 
+    // ✅ Filter hanya peserta dalam training tertentu
+    if (trainingId) {
+      queryBuilder.andWhere("training.id = :trainingId", { trainingId });
+    }
+    
+    // ✅ KUNCI UTAMA: Filter HANYA yang sudah di-soft delete (diarsip)
+    queryBuilder.andWhere("tp.deletedAt IS NOT NULL");
+
+    // ✅ Search multi-field (logika sama persis)
+    if (search) {
+      queryBuilder.andWhere(
+        `(participant.firstName LIKE :search
+          OR participant.lastName LIKE :search
+          OR participant.email LIKE :search
+          OR user.userName LIKE :search
+          OR user.email LIKE :search)`,
+        { search: `%${search}%` }
+      );
+    }
+
+    // ✅ Pagination
+    queryBuilder.skip(skip).take(limit);
+
+    // Hasilnya adalah array dari 'trainingParticipant'
+    const [trainingParticipants, totalCount] = await queryBuilder.getManyAndCount();
+
+    // ✅ Transform hasil (format sama persis dengan 'safeData' Anda)
+    const safeData = trainingParticipants.map((tp) => {
+      // 'tp' adalah 'trainingInfo' dari fungsi referensi Anda
+      const p = tp.participant; // 'p' adalah partisipannya
+      if (!p) return null; // Keamanan jika ada data yatim
+
+      // Ekstrak kategori (logika sama persis)
+      const categoriesArray = tp.training?.trainingCategory?.map((tc: any) => tc.category) || [];
+      const firstCategory = categoriesArray.length > 0 ? categoriesArray[0] : null;
+
+      return {
+        id: p.id,
+        firstName: p.firstName,
+        lastName: p.lastName,
+        email: p.email,
+        company: p.company,
+        jobTitle: p.jobTitle,
+        phone: p.phone,
+        message: p.message,
+        createdAt: p.createdAt,
+        user: p.user
+          ? {
+              id: p.user.id,
+              userName: p.user.userName,
+              role: p.user.role,
+              image: p.user.imageAvatar,
+            }
+          : null,
+        status: tp.status ?? "Archived", // Tampilkan status dari 'tp' atau "Archived"
+        deletedAt: tp.deletedAt, // Sertakan info kapan dihapus
+        training: tp.training
+          ? {
+              id: tp.training.id,
+              trainingName: tp.training.trainingName,
+              startDateTraining: tp.training.startDateTraining,
+              endDateTraining: tp.training.endDateTraining,
+              category: firstCategory,
+            }
+          : null,
+      };
+    }).filter(Boolean); // Hapus data null jika ada
+
+    return res.status(200).send(
+      successResponse(
+        "Get Archived Participants by Training ID Success", // Pesan diubah
+        {
+          data: safeData,
+          totalCount,
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+        200
+      )
+    );
+  } catch (error: any) {
+    return res.status(500).send(errorResponse(error.message, 500));
+  }
+};
 
 
 export const getAllParticipant = async (req: Request, res: Response) => {
