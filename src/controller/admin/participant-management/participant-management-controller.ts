@@ -12,6 +12,7 @@ import {
 } from "@/utils/response";
 import { trainingParticipant, statusTraining } from "@/model/training-participant";
 import { certificate } from "@/model/certificate";
+import { In } from "typeorm";
 
 const trainingRepository = AppDataSource.getRepository(training);
 const userRepository = AppDataSource.getRepository(user);
@@ -838,23 +839,78 @@ export const changeStatusParticipant = async (req: Request, res: Response) => {
 
 
 export const restoreParticipant = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
+  // 1. Gunakan transaksi untuk keamanan data
+  const queryRunner = AppDataSource.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
 
-    await participantRepository.restore(id);
-    await trainingParticipantRepository
-      .createQueryBuilder()
-      .restore()
-      .where("participantId = :id", { id })
-      .execute();
+  try {
+    // 2. Ambil kedua ID dari parameter
+    const { trainingId, participantId } = req.params;
+
+    if (!trainingId || !participantId) {
+      await queryRunner.rollbackTransaction();
+      return res.status(400).json({ msg: "trainingId and participantId are required" });
+    }
+
+    // 3. Cari relasi 'trainingParticipant' yang spesifik, TERMASUK yang sudah di-soft delete
+    const trainingParticipantRec = await queryRunner.manager.findOne(trainingParticipant, {
+      where: {
+        training: { id: trainingId },
+        participant: { id: participantId },
+      },
+      relations: [
+        "certificate",
+        "trainingParticipantCategory",
+      ],
+      withDeleted: true, // SANGAT PENTING: untuk menemukan data yang sudah di-soft delete
+    });
+
+    if (!trainingParticipantRec) {
+      await queryRunner.rollbackTransaction();
+      return res.status(404).json({ msg: "Archived participant record not found for this training." });
+    }
+
+    if (trainingParticipantRec.deletedAt === null) {
+      await queryRunner.rollbackTransaction();
+      return res.status(400).json({ msg: "Participant is already active in this training." });
+    }
+
+    // 4. Pulihkan (restore) relasi anak terlebih dahulu
+    if (trainingParticipantRec.certificate) {
+      await queryRunner.manager.restore(certificate, { id: trainingParticipantRec.certificate.id });
+    }
+
+    // ✅ DIUBAH: Perlakukan sebagai objek tunggal
+    if (trainingParticipantRec.trainingParticipantCategory) {
+      // Ambil ID dari objek tunggal tersebut
+      const categoryId = trainingParticipantRec.trainingParticipantCategory.id;
+
+      // Restore entri tunggal tersebut
+      await queryRunner.manager.restore(trainingParticipantCategory, { id: categoryId });
+    }
+
+    // 5. Pulihkan (restore) relasi induk 'trainingParticipant'
+    await queryRunner.manager.restore(trainingParticipant, { id: trainingParticipantRec.id });
+
+    // 6. Commit transaksi
+    await queryRunner.commitTransaction();
 
     return res.status(200).send(
-      successResponse("Participant restored successfully", { id }, 200)
+      successResponse(
+        "Participant restored to this training successfully",
+        { restoredRelationId: trainingParticipantRec.id },
+        200
+      )
     );
-  } catch (error) {
+
+  } catch (error: any) {
+    await queryRunner.rollbackTransaction();
+    console.error("Error restoring participant:", error);
     return res.status(500).json({
       message: error instanceof Error ? error.message : "Unknown error occurred",
     });
+  } finally {
+    await queryRunner.release();
   }
 };
-
