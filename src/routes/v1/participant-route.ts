@@ -39,7 +39,8 @@ router.put("/update-participant/:id", [
   onlyAdminMiddleware,
   updateParticipant,
 ]);
-router.delete("/delete-participant/:id", [
+router.delete(  "/delete-participant/:trainingId/:participantId",
+[
   authMiddleware,
   onlyAdminMiddleware,
   deleteParticipant,

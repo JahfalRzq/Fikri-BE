@@ -1,7 +1,6 @@
 request rest :
 
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjdiM2Y1NjEzLTQ4YjgtNDU5Mi04MjlmLTI5ZGMxMDY2YjEzZiIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0xMC0xMlQxMTo0MDozOC42OTFaIiwiaWF0IjoxNzYwNDcwOTM5LCJleHAiOjE3NjA1NTczMzl9.B3OkzJVzda0LyGiOJxoa0ngidzOb_N00lQGW2BsmFV0
-
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjdiM2Y1NjEzLTQ4YjgtNDU5Mi04MjlmLTI5ZGMxMDY2YjEzZiIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0xMC0xMlQxMTo0MDozOC42OTFaIiwiaWF0IjoxNzYwNjA0MzU4LCJleHAiOjE3NjA2OTA3NTh9.ods2sMKDsjU1onyOsNjY3nwto_LfHz54nsYCHd8gGq8
 
 ###
 GET http://localhost:5000/api/v1/seeder/userSeeder
@@ -142,12 +141,8 @@ Authorization: Bearer {{token}}
 
 
 
-
-
-
 ###
-GET  http://localhost:5000/api/v1/coach/get-all-coach
-Content-Type: application/json
+GET http://localhost:5000/api/v1/coach/get-all-coach?page=1&limit=5
 Authorization: Bearer {{token}}
 
 

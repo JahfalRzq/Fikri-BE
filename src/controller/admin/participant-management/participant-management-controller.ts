@@ -712,47 +712,64 @@ export const updateParticipant = async (req: Request, res: Response) => {
 
 
 export const deleteParticipant = async (req: Request, res: Response) => {
-  // try {
-  //   const { id } = req.params;
+  try {
+    const { trainingId, participantId } = req.params;
 
-  //   const participantToDelete = await participantRepository.findOne({
-  //     where: { id },
-  //     relations: ["trainingParticipant"], // penting: ambil relasi
-  //   });
+    if (!trainingId || !participantId) {
+      return res.status(400).json({ msg: "trainingId and participantId are required" });
+    }
 
-  //   if (!participantToDelete) {
-  //     return res.status(404).json({ msg: "Participant not Found" });
-  //   }
+    // Cek apakah relasi trainingParticipant-nya ada
+    const trainingParticipantRec = await trainingParticipantRepository.findOne({
+      where: {
+        training: { id: trainingId },
+        participant: { id: participantId },
+      },
+      relations: [
+        "certificate",
+        "trainingParticipantCategory",
+        "participant",
+        "training",
+      ],
+      withDeleted: false, // hanya ambil yang belum dihapus
+    });
 
-  //   // pastikan relasi selalu array
-  //   const relatedTPs = Array.isArray(participantToDelete.trainingParticipant)
-  //     ? participantToDelete.trainingParticipant
-  //     : participantToDelete.trainingParticipant
-  //       ? [participantToDelete.trainingParticipant]
-  //       : [];
+    if (!trainingParticipantRec) {
+      return res.status(404).json({ msg: "Participant is not registered in this training" });
+    }
 
-  //   // hapus semua relasi trainingParticipant terlebih dahulu
-  //   if (relatedTPs.length > 0) {
-  //     await trainingParticipantStory.remove(relatedTPs);
-  //   }
+    // Soft delete certificate jika ada
+    if (trainingParticipantRec.certificate) {
+      await certificateRepository.softRemove(trainingParticipantRec.certificate);
+    }
 
-  //   // lalu hapus participant
-  //   await participantRepository.remove(participantToDelete);
+    // Soft delete kategori jika ada
+    if (trainingParticipantRec.trainingParticipantCategory) {
+      await trainingParticipantCategoryRepository.softRemove(
+        trainingParticipantRec.trainingParticipantCategory
+      );
+    }
 
-  //   return res
-  //     .status(200)
-  //     .send(
-  //       successResponse(
-  //         "Participant and related trainingParticipant deleted successfully",
-  //         { data: participantToDelete },
-  //         200
-  //       )
-  //     );
-  // } catch (error) {
-  //   return res.status(500).json({
-  //     message: error instanceof Error ? error.message : "Unknown error occurred",
-  //   });
-  // }
+    // Soft delete relasi utama trainingParticipant
+    await trainingParticipantRepository.softRemove(trainingParticipantRec);
+
+    return res.status(200).send(
+      successResponse(
+        "Participant soft-deleted from this training successfully",
+        {
+          trainingId,
+          participantId,
+          deletedAt: new Date().toISOString(),
+        },
+        200
+      )
+    );
+  } catch (error: any) {
+    console.error("Error soft deleting participant:", error);
+    return res.status(500).json({
+      message: error instanceof Error ? error.message : "Unknown error occurred",
+    });
+  }
 };
 
 
