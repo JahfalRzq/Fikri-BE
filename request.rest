@@ -1,6 +1,7 @@
 request rest :
 
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjdiM2Y1NjEzLTQ4YjgtNDU5Mi04MjlmLTI5ZGMxMDY2YjEzZiIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0xMC0xMlQxMTo0MDozOC42OTFaIiwiaWF0IjoxNzYwNjA0MzU4LCJleHAiOjE3NjA2OTA3NTh9.ods2sMKDsjU1onyOsNjY3nwto_LfHz54nsYCHd8gGq8
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjUwNDk2Y2IyLTE0YzItNDIzNS04YzY1LTg2MDE1MzRiM2VjMyIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0xMC0yMlQwODozMTo1MC4zNDZaIiwiaWF0IjoxNzYxMTI5NzM2LCJleHAiOjE3NjEyMTYxMzZ9.Pbo6khkomOLW4M7XJKzgaco2GVctGVVtvAcJIIfpvFQ
+
 
 ###
 GET http://localhost:5000/api/v1/seeder/userSeeder
@@ -400,15 +401,21 @@ GET http://localhost:5000/api/v1/certificate/get-certificate-by-training-id/afec
 Authorization: Bearer {{token}}
 
 ###
-PUT http://localhost:5000/api/v1/certificate/udpate-certificate-by-id/2c4fb1fc-a04d-45f4-9c92-299c2dce3119
+POST http://localhost:5000/api/v1/certificate/publish-certificate-by-training-id/7b794b58-6b9e-4f58-8c6f-49441ef72fe0
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "imageUrl": "https://cdn.example.com/certificates/cert1-updated.png",
-  "noLiscense": "CERT-2025-NEW",
-  "expiredAt": "2027-01-01"
+  "certificates": [
+    {
+      "trainingParticipantId": "d452c1b3-0184-4bcf-a446-fecc3d5c949e",
+      "imageUrl": "https://example.com/certificates/cert-001.jpg",
+      "noLiscense": "TESTCERT-001",
+      "expiredAt": "2026-10-22"
+    }
+  ]
 }
+
 
 
 

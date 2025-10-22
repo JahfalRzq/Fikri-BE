@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
   getCertificatesByTrainingId,
-  updateCertificate,
+  publishCertificates,
  
 } from "@/controller/certificate/certificate-controller";
 
@@ -17,10 +17,10 @@ router.get("/get-certificate-by-training-id/:id", [
   onlyAdminMiddleware,
   getCertificatesByTrainingId,
 ]);
-router.put("/udpate-certificate-by-id/:id", [
+router.post("/publish-certificate-by-training-id/:id", [
   authMiddleware,
   onlyAdminMiddleware,
-  updateCertificate,
+  publishCertificates,
 ]);
 
 export default router;

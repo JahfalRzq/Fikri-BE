@@ -106,48 +106,86 @@ export const getCertificatesByTrainingId = async (req: Request, res: Response) =
 };
 
 
-export const updateCertificate = async (req: Request, res: Response) => {
-    const updateSchema = (input: any) =>
-        Joi.object({
-            imageUrl: Joi.string().uri().optional(),
-            noLiscense: Joi.string().optional(),
-            expiredAt: Joi.date().optional(),
-        }).validate(input);
+export const publishCertificates = async (req: Request, res: Response) => {
+  try {
+    const { id: trainingId } = req.params;
+    const { certificates } = req.body;
 
-    try {
-        const { certificateId } = req.params;
-        const body = req.body;
-
-        const idAsNumber = parseInt(certificateId, 10);
-
-        if (isNaN(idAsNumber)) {
-            return res.status(400).json({ msg: "Invalid certificate ID format." });
-        }
-
-        const { error } = updateSchema(body);
-        if (error) {
-            return res.status(422).send(validationResponse({ error }));
-        }
-
-        const certificate = await certificateRepository.findOneBy({ id: idAsNumber });
-
-        if (!certificate) {
-            return res.status(404).json({ msg: "Certificate not found." });
-        }
-
-        // Update field yang diberikan saja
-        certificate.imageUrl = body.imageUrl ?? certificate.imageUrl;
-        certificate.noLiscense = body.noLiscense ?? certificate.noLiscense;
-        certificate.expiredAt = body.expiredAt ?? certificate.expiredAt;
-
-        await certificateRepository.save(certificate);
-
-        return res.status(200).send(
-            successResponse("Certificate updated successfully", certificate, 200)
-        );
-
-    } catch (error: any) {
-        return res.status(500).json({ message: error.message });
+    if (!trainingId || !Array.isArray(certificates) || certificates.length === 0) {
+      return res.status(400).send(errorResponse("Invalid request body", 400));
     }
+
+    // Ambil semua participant dari training terkait
+    const trainingParticipants = await trainingParticipantRepository.find({
+      where: { training: { id: trainingId } },
+      relations: ["participant", "certificate"],
+    });
+
+    if (!trainingParticipants.length) {
+      return res.status(404).send(errorResponse("No participants found for this training", 404));
+    }
+
+    const updatedCertificates: certificate[] = [];
+    const skipped: string[] = [];
+
+    for (const item of certificates) {
+      const { trainingParticipantId, imageUrl, noLiscense, expiredAt } = item;
+
+      const tp = trainingParticipants.find(tp => tp.id === trainingParticipantId);
+      if (!tp) {
+        skipped.push(trainingParticipantId);
+        continue;
+      }
+
+      // ✅ Hanya peserta dengan status 'selesai' yang boleh diperbarui sertifikatnya
+      if (tp.status !== statusTraining.selesai) {
+        skipped.push(`${trainingParticipantId} (status: ${tp.status})`);
+        continue;
+      }
+
+      if (!tp.certificate) {
+        skipped.push(`${trainingParticipantId} (no certificate linked)`);
+        continue;
+      }
+
+      // ✅ Update sertifikat yang sudah ada
+      tp.certificate.imageUrl = imageUrl;
+      tp.certificate.noLiscense = noLiscense;
+      tp.certificate.expiredAt = expiredAt;
+      await certificateRepository.save(tp.certificate);
+
+      updatedCertificates.push(tp.certificate);
+    }
+
+    if (updatedCertificates.length === 0) {
+      return res.status(200).send(
+        successResponse("No certificates updated", {
+          skipped,
+          updatedCount: 0,
+        }, 200)
+      );
+    }
+
+    return res.status(200).send(
+      successResponse(
+        "Certificates updated successfully",
+        {
+          updatedCount: updatedCertificates.length,
+          updatedCertificates: updatedCertificates.map(c => ({
+            id: c.id,
+            noLiscense: c.noLiscense,
+            expiredAt: c.expiredAt,
+            imageUrl: c.imageUrl,
+            trainingParticipantId: c.trainingParticipant?.id,
+          })),
+          skipped,
+        },
+        200
+      )
+    );
+  } catch (error: any) {
+    console.error("Error updating certificates:", error);
+    return res.status(500).send(errorResponse(error.message, 500));
+  }
 };
 
