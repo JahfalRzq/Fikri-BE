@@ -9,6 +9,7 @@ import CoachRoute from "./coach-route";
 import CategoryRoute from "./category-route";
 import UserManagementRoute from "./user-management-route"
 import CertificateManagementRoute from './certficate-route'
+import participantDashboard from './participant-dashboard-route'
 
 const router = Router();
 router.use("/seeder", SeederRoute);
@@ -21,6 +22,8 @@ router.use("/setting", setting);
 router.use("/coach", CoachRoute);
 router.use("/category", CategoryRoute);
 router.use("/certificate", CertificateManagementRoute);
+router.use("/participant-dashboard", participantDashboard);
+
 
 
 

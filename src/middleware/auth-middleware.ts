@@ -18,6 +18,10 @@ export const authMiddleware = (
 ) => {
   const authHeader = request.get("Authorization");
 
+  // 1. Cek jika header ada
+    console.log("--- AUTH MIDDLEWARE START ---");
+    console.log("Header:", authHeader);
+
   if (!authHeader) {
     return response
       .status(409)
@@ -25,6 +29,7 @@ export const authMiddleware = (
   }
 
   const token = authHeader.split(" ")[1];
+  console.log("Token:", token);
 
   try {
     const jwtPayload = jwt.verify(token, process.env.JWT_SECRET!);
@@ -67,6 +72,45 @@ export const onlyAdminMiddleware = async (
     }
 
     // If user is admin, proceed to next middleware/controller
+    next();
+  } catch (_error) {
+    return res.status(500).send(errorResponse("Internal server error", 500));
+  }
+};
+
+
+export const onlyParticipantMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.jwtPayload?.id) {
+      return res
+        .status(401)
+        .send(errorResponse("Unauthorized: JWT payload not found", 401));
+    }
+
+    const userAccess = await userRepository.findOneBy({
+      id: req.jwtPayload.id,
+    });
+
+    if (!userAccess) {
+      return res.status(404).send(errorResponse("User not found", 404));
+    }
+
+    if (userAccess.role !== UserRole.PARTICIPANT) {
+      return res
+        .status(403)
+        .send(
+          errorResponse(
+            "Access Denied: Only PARTICIPANT can access this resource",
+            403,
+          ),
+        );
+    }
+
+    // If user is PARTICIPANT, proceed to next middleware/controller
     next();
   } catch (_error) {
     return res.status(500).send(errorResponse("Internal server error", 500));

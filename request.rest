@@ -1,6 +1,7 @@
 request rest :
 
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjUwNDk2Y2IyLTE0YzItNDIzNS04YzY1LTg2MDE1MzRiM2VjMyIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0xMC0yMlQwODozMTo1MC4zNDZaIiwiaWF0IjoxNzYxMTI5NzM2LCJleHAiOjE3NjEyMTYxMzZ9.Pbo6khkomOLW4M7XJKzgaco2GVctGVVtvAcJIIfpvFQ
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImQ2M2FjMGU4LWQ3NDQtNDQzYi1iMDg5LWQ5ODAxYTdjNTdjMSIsInVzZXJOYW1lIjoicGFydGljaXBhbnQwMSIsImNyZWF0ZWRBdCI6IjIwMjUtMTAtMjlUMjI6MDU6NDguNTM1WiIsImlhdCI6MTc2MTc3NjgzMiwiZXhwIjoxNzYxODYzMjMyfQ.kgTBVjLpAz6yQr0P_BWeDYMlQrW-ikP2GvT8Py9e07A
+
 
 
 ###
@@ -25,8 +26,8 @@ Authorization: Bearer {{token}}
 POST  http://localhost:5000/api/v1/auth/login
 Content-Type: application/json
 
-{     "userName"    : "Admin1",
-      "password" : "Admin1!0)"
+{     "userName"    : "participant01",
+      "password" : "Participant1!0)"
 }
 
 ###
@@ -415,6 +416,18 @@ Authorization: Bearer {{token}}
     }
   ]
 }
+
+
+###
+GET http://localhost:5000/api/v1/participant-dashboard/get-certificate
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+###
+GET http://localhost:5000/api/v1/participant-dashboard/get-certificate-by-id/d4bba89b-9f48-493f-83fe-2aa422c36d17
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
 
 

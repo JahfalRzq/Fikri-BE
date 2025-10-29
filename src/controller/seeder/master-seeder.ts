@@ -42,8 +42,8 @@ export const masterSeeder = async (req: Request, res: Response) => {
     // 🟢 3. User
     const users = userRepo.create([
       { userName: "Admin1", password: "Admin1!0)", role: UserRole.ADMIN },
-      { userName: "participant01", password: "123456", role: UserRole.PARTICIPANT },
-      { userName: "participant02", password: "123456", role: UserRole.PARTICIPANT },
+      { userName: "participant01", password: "Participant1!0)", role: UserRole.PARTICIPANT },
+      { userName: "participant02", password: "Participant2@9(", role: UserRole.PARTICIPANT },
     ]);
 
     users.forEach((u) => u.hashPassword());

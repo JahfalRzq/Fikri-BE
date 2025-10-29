@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn,UpdateDateColumn,DeleteDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, UpdateDateColumn, DeleteDateColumn } from "typeorm";
 import { trainingParticipant } from "./training-participant";
+
 
 @Entity()
 export class certificate {
@@ -27,4 +28,5 @@ export class certificate {
 
   @DeleteDateColumn()
   deletedAt: Date;
+
 }
