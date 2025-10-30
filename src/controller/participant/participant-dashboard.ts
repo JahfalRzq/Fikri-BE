@@ -169,3 +169,86 @@ export const getCertificateById = async (req: Request, res: Response) => {
     return res.status(500).send(errorResponse(error.message, 500));
   }
 };
+
+export const getParticipantDashboardSummary = async (req: Request, res: Response) => {
+  try {
+    // 1. Dapatkan ID user yang login dari payload JWT
+    const loggedInUserId = (req as any).jwtPayload?.id;
+
+    if (!loggedInUserId) {
+      return res.status(401).send(errorResponse("User not authenticated or JWT payload missing", 401));
+    }
+
+    // 2. Cari profil participant berdasarkan user ID
+    const userParticipant = await participantRepository.findOne({
+      where: {
+        user: { id: loggedInUserId },
+      },
+      select: ["id"], 
+    });
+
+    if (!userParticipant) {
+      return res.status(403).send(errorResponse("Participant profile not found for this user", 403));
+    }
+
+    const participantId = userParticipant.id;
+
+    // 3. Gunakan QueryBuilder untuk menghitung semua status dalam satu query
+    // Ini jauh lebih efisien daripada mengambil semua data lalu menghitungnya di server
+    const statsQuery = await trainingParticipantRepository
+      .createQueryBuilder("tp") // 'tp' = trainingParticipant
+      .select("tp.status", "status") // Pilih kolom status
+      .addSelect("COUNT(tp.id)", "count") // Hitung jumlahnya
+      .where("tp.participantId = :participantId", { participantId }) // Filter berdasarkan participant
+      .groupBy("tp.status") // Kelompokkan berdasarkan status
+      .getRawMany(); // Dapatkan hasil mentah [ { status: 'selesai', count: '5' }, ... ]
+
+    // 4. Inisialisasi hasil perhitungan
+    let statusCount = {
+      [statusTraining.selesai]: 0,
+      [statusTraining.sedangBerlangsung]: 0,
+      [statusTraining.tidakSelesai]: 0,
+      [statusTraining.belumMulai]: 0,
+    };
+
+    let totalTrainingDiikuti = 0;
+
+    // 5. Proses hasil query
+    for (const row of statsQuery) {
+      const status = row.status as statusTraining;
+      const count = parseInt(row.count, 10); // Hasil 'count' adalah string
+
+      if (status in statusCount) {
+        statusCount[status] = count;
+      }
+      totalTrainingDiikuti += count;
+    }
+
+    // 6. Sesuai definisi Anda, sertifikat siap download = status selesai
+    const totalSertifikatSiap = statusCount[statusTraining.selesai];
+
+    // 7. Siapkan data respons
+    const responseData = {
+      totalTrainingDiikuti,
+      totalSertifikatSiap,
+      statusCount: {
+        selesai: statusCount[statusTraining.selesai],
+        sedangBerlangsung: statusCount[statusTraining.sedangBerlangsung],
+        tidakSelesai: statusCount[statusTraining.tidakSelesai],
+        belumMulai: statusCount[statusTraining.belumMulai],
+      },
+    };
+
+    // 8. Kirim respons sukses
+    return res.status(200).send(
+      successResponse(
+        "Participant dashboard summary retrieved successfully",
+        responseData,
+        200
+      )
+    );
+
+  } catch (error: any) {
+    return res.status(500).send(errorResponse(error.message, 500));
+  }
+};
