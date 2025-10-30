@@ -9,6 +9,9 @@ import router from "./routes/index"
 
 dotenv.config()
 
+// Register and preload canvas fonts (side-effect module)
+import "@/utils/canvas-setup";
+
 const app = express()
 
 // Database initialization flag

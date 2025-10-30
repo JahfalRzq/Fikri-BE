@@ -6,6 +6,9 @@ import { statusTraining } from "@/model/training-participant"; // Import the enu
 import Joi from "joi";
 import { trainingParticipant } from "@/model/training-participant";
 import { participant } from "@/model/participant"; // ✅ Kita akan mulai dari sini
+import { createCanvas, loadImage } from "canvas";
+import path from "path";
+import fs from "fs";
 
 
 const certificateRepository = AppDataSource.getRepository(certificate);
@@ -108,10 +111,9 @@ export const getCertificatesByTrainingId = async (req: Request, res: Response) =
 
 export const publishCertificates = async (req: Request, res: Response) => {
   try {
-    const { id: trainingId } = req.params;
-    const { certificates } = req.body;
+    const { participantIds, trainingId, template } = req.body;
 
-    if (!trainingId || !Array.isArray(certificates) || certificates.length === 0) {
+    if (!trainingId || !Array.isArray(participantIds) || participantIds.length === 0) {
       return res.status(400).send(errorResponse("Invalid request body", 400));
     }
 
@@ -128,33 +130,92 @@ export const publishCertificates = async (req: Request, res: Response) => {
     const updatedCertificates: certificate[] = [];
     const skipped: string[] = [];
 
-    for (const item of certificates) {
-      const { trainingParticipantId, imageUrl, noLiscense, expiredAt } = item;
+    for (const participantId of participantIds) {
 
-      const tp = trainingParticipants.find(tp => tp.id === trainingParticipantId);
+      const tp = trainingParticipants.find(tp => tp.participant.id === participantId);
       if (!tp) {
-        skipped.push(trainingParticipantId);
+        skipped.push(participantId + " (not found in this training)");
         continue;
       }
 
       // ✅ Hanya peserta dengan status 'selesai' yang boleh diperbarui sertifikatnya
       if (tp.status !== statusTraining.selesai) {
-        skipped.push(`${trainingParticipantId} (status: ${tp.status})`);
+        skipped.push(`${participantId} (status: ${tp.status})`);
         continue;
       }
 
-      if (!tp.certificate) {
-        skipped.push(`${trainingParticipantId} (no certificate linked)`);
+      if (tp.certificate) {
+        // If certificate already exists, skip generation
+        skipped.push(`${participantId} (certificate already exists)`);
         continue;
       }
 
-      // ✅ Update sertifikat yang sudah ada
-      tp.certificate.imageUrl = imageUrl;
-      tp.certificate.noLiscense = noLiscense;
-      tp.certificate.expiredAt = expiredAt;
-      await certificateRepository.save(tp.certificate);
+      // Create a new certificate entity (we'll save after generating the image)
+      const newCert = certificateRepository.create();
 
-      updatedCertificates.push(tp.certificate);
+      // Assign a license number first so we can use it as filename
+      newCert.noLiscense = `EXPIND-${trainingId}-${tp.participant.id}-${Date.now()}`;
+
+      // Generate certificate image and save to public/certificates/<noLiscense>.png
+      try {
+          const canvasWidth = 1200;
+          const canvasHeight = 800;
+          const canvas = createCanvas(canvasWidth, canvasHeight);
+          const ctx = canvas.getContext("2d");
+
+          // Load a template background if available
+          const templatePath = path.join(process.cwd(), "public", "templates", "template1.png");
+          if (fs.existsSync(templatePath)) {
+            const img = await loadImage(templatePath);
+            ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+          } else {
+            // fallback: fill white background
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+          }
+
+          // Draw participant name
+          const name = `${tp.participant.firstName || ""} ${tp.participant.lastName || ""}`.trim();
+          ctx.fillStyle = "#000";
+          ctx.textAlign = "center";
+          // Title/name style (uses registered Playfair Display if available)
+          ctx.font = '48px "Playfair Display"';
+          ctx.fillText(name || "-", canvasWidth / 2, canvasHeight / 2 - 20);
+
+          // Draw training info (small)
+          const trainingName = (tp as any).training?.trainingName || `Training ${trainingId}`;
+          ctx.font = '20px "Montserrat"';
+          ctx.fillText(trainingName, canvasWidth / 2, canvasHeight / 2 + 30);
+
+          // Ensure output directory
+          const outDir = path.join(process.cwd(), "public", "certificates");
+          if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+          const filename = `${newCert.noLiscense}.png`;
+          const outPath = path.join(outDir, filename);
+          const buffer = canvas.toBuffer("image/png");
+          fs.writeFileSync(outPath, buffer);
+
+          // Save relative URL (served from public)
+          newCert.imageUrl = `/certificates/${filename}`;
+        } catch (genErr: any) {
+          // If image generation fails for this participant, skip and record reason
+          skipped.push(`${participantId} (image generation failed: ${genErr?.message || genErr})`);
+          continue;
+        }
+        newCert.expiredAt = new Date(Date.now() + 3 * 365 * 24 * 60 * 60 * 1000); // 3 year from now
+        // link to training participant; property name may be trainingParticipant or trainingParticipantId depending on entity
+        try {
+          // Prefer relation assignment
+          (newCert as any).trainingParticipant = tp;
+          const saved = await certificateRepository.save(newCert);
+          // attach to tp for convenience
+          (tp as any).certificate = saved;
+          updatedCertificates.push(saved);
+        } catch (saveErr: any) {
+          skipped.push(`${participantId} (failed to save certificate: ${saveErr?.message || saveErr})`);
+          continue;
+        }
     }
 
     if (updatedCertificates.length === 0) {
