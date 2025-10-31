@@ -111,7 +111,7 @@ export const getCertificatesByTrainingId = async (req: Request, res: Response) =
 
 export const publishCertificates = async (req: Request, res: Response) => {
   try {
-    const { participantIds, trainingId } = req.body;
+    const { participantIds, trainingId, template } = req.body;
     if (!trainingId || !Array.isArray(participantIds) || participantIds.length === 0) {
       return res.status(400).send(errorResponse("Invalid request body", 400));
     }
@@ -161,7 +161,7 @@ export const publishCertificates = async (req: Request, res: Response) => {
         const ctx = canvas.getContext("2d");
 
         // Load a template background if available
-        const templatePath = path.join(process.cwd(), "public", "templates", "template1.png");
+        const templatePath = path.join(process.cwd(), "public", "templates", template || "template1.png");
         if (fs.existsSync(templatePath)) {
           const img = await loadImage(templatePath);
           ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
@@ -240,5 +240,4 @@ export const publishCertificates = async (req: Request, res: Response) => {
     return res.status(500).send(errorResponse(error.message, 500));
   }
 };
-
 
