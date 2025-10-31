@@ -17,7 +17,7 @@ router.get("/get-certificate-by-training-id/:id", [
   onlyAdminMiddleware,
   getCertificatesByTrainingId,
 ]);
-router.post("/publish", [
+router.put("/publish", [
   authMiddleware,
   onlyAdminMiddleware,
   publishCertificates,
