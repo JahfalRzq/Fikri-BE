@@ -1,6 +1,7 @@
 request rest :
 
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImJmNGMwYzdiLWEzOGItNDkyMi1hZWJlLWQ1MzVkNjhhOWZkOCIsInVzZXJOYW1lIjoiVGVzdFBhcnRpY2lwYW50VXNlciIsImNyZWF0ZWRBdCI6IjIwMjUtMTAtMzBUMTQ6MjI6MjEuMDAwWiIsImlhdCI6MTc2MTgzNDQ0MiwiZXhwIjoxNzYxOTIwODQyfQ.UUVrsp1rM6zR9ub8kWyj0u_XqSXHkf-T4jmzw04Tweg
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjRhYTc0ZjgzLTU1ZTEtNDFhMy04NGIxLTc3MTgzYWEzNjZhZCIsInVzZXJOYW1lIjoicGFydGljaXBhbnQwMSIsImNyZWF0ZWRBdCI6IjIwMjUtMTAtMzBUMjM6NDE6MzAuNDg2WiIsImlhdCI6MTc2MTg2OTM2MSwiZXhwIjoxNzYxOTU1NzYxfQ.YU5GWpA_6rlLYCgH8hiUribSjW_YNoCArY99YWD3RWI
+
 
 
 
@@ -26,8 +27,8 @@ Authorization: Bearer {{token}}
 POST  http://localhost:5000/api/v1/auth/login
 Content-Type: application/json
 
-{     "userName"    : "TestParticipantUser",
-      "password" : "TestParticipantUser1!"
+{     "userName"    : "participant01",
+      "password" : "Participant1!0)"
 }
 
 ###
@@ -425,7 +426,7 @@ Authorization: Bearer {{token}}
 
 
 ###
-GET http://localhost:5000/api/v1/participant-dashboard/get-certificate-by-id/d4bba89b-9f48-493f-83fe-2aa422c36d17
+GET http://localhost:5000/api/v1/participant-dashboard/get-certificate-by-id/30649ce9-ea13-44c3-b70d-242367f8d9dd
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
