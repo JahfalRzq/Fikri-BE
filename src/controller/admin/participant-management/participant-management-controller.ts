@@ -32,25 +32,49 @@ export const getParticipantsByTrainingId = async (req: Request, res: Response) =
     const status = (req.query.status as string) || "";
     const skip = (page - 1) * limit;
 
+    // ✅ SELECT kolom penting saja
     const queryBuilder = participantRepository
       .createQueryBuilder("participant")
-      .leftJoinAndSelect("participant.user", "user")
-      .leftJoinAndSelect("participant.trainingParticipant", "tp")
-      .leftJoinAndSelect("tp.training", "training")
-      .leftJoinAndSelect("training.trainingCategory", "trainingCategory")
-      .leftJoinAndSelect("trainingCategory.category", "category").orderBy("participant.createdAt", "DESC");
+      .select([
+        "participant.id",
+        "participant.firstName",
+        "participant.lastName",
+        "participant.email",
+        "participant.company",
+        "participant.jobTitle",
+        "participant.phone",
+        "participant.createdAt", // ✅ tambahkan agar bisa ORDER BY tanpa error
+        "user.id",
+        "user.userName",
+        "tp.id",
+        "tp.status",
+        "tp.certificateId", // ✅ ambil hanya ID sertifikat
+        "training.id",
+        "training.trainingName",
+        "training.startDateTraining",
+        "training.endDateTraining",
+        "category.id",
+        "category.categoryName",
+      ])
+      .leftJoin("participant.user", "user")
+      .leftJoin("participant.trainingParticipant", "tp")
+      .leftJoin("tp.training", "training")
+      .leftJoin("training.trainingCategory", "trainingCategory")
+      .leftJoin("trainingCategory.category", "category")
+      .where("participant.deletedAt IS NULL")
+      .orderBy("participant.createdAt", "DESC");
 
-    // ✅ Filter hanya peserta dalam training tertentu
+    // ✅ Filter trainingId
     if (trainingId) {
       queryBuilder.andWhere("training.id = :trainingId", { trainingId });
     }
 
-    // ✅ Filter status training (optional)
+    // ✅ Filter status (optional)
     if (status && Object.values(statusTraining).includes(status as statusTraining)) {
       queryBuilder.andWhere("tp.status = :status", { status });
     }
 
-    // ✅ Search multi-field
+    // ✅ Search ringan
     if (search) {
       queryBuilder.andWhere(
         `(participant.firstName LIKE :search
@@ -65,17 +89,23 @@ export const getParticipantsByTrainingId = async (req: Request, res: Response) =
     // ✅ Pagination
     queryBuilder.skip(skip).take(limit);
 
-    const [participants, totalCount] = await queryBuilder.getManyAndCount();
+    // Jalankan query & count terpisah
+    const [participants, totalCount] = await Promise.all([
+      queryBuilder.getMany(),
+      participantRepository
+        .createQueryBuilder("participant")
+        .leftJoin("participant.trainingParticipant", "tp")
+        .leftJoin("tp.training", "training")
+        .where("training.id = :trainingId", { trainingId })
+        .andWhere("participant.deletedAt IS NULL")
+        .getCount(),
+    ]);
 
-    // ✅ Transform hasil
+    // ✅ Transform hasil untuk FE
     const safeData = participants.map((p) => {
-      const trainingInfo = p.trainingParticipant.find((tp: any) => tp.training?.id === trainingId);
-
-      // Ekstrak kategori dari trainingCategory
-      const categoriesArray = trainingInfo?.training?.trainingCategory?.map((tc: any) => tc.category) || [];
-
-      // Ambil kategori pertama dari array, atau null jika tidak ada
-      const firstCategory = categoriesArray.length > 0 ? categoriesArray[0] : null;
+      const trainingInfo = p.trainingParticipant?.find((tp: any) => tp.training?.id === trainingId);
+      const firstCategory =
+        trainingInfo?.training?.trainingCategory?.[0]?.category ?? null;
 
       return {
         id: p.id,
@@ -85,17 +115,14 @@ export const getParticipantsByTrainingId = async (req: Request, res: Response) =
         company: p.company,
         jobTitle: p.jobTitle,
         phone: p.phone,
-        message: p.message,
-        createdAt: p.createdAt,
         user: p.user
           ? {
             id: p.user.id,
             userName: p.user.userName,
-            role: p.user.role,
-            image: p.user.imageAvatar,
           }
           : null,
         status: trainingInfo?.status ?? "unknown",
+        certificateId: trainingInfo?.certificate?.id ?? null,
         training: trainingInfo?.training
           ? {
             id: trainingInfo.training.id,
@@ -110,7 +137,7 @@ export const getParticipantsByTrainingId = async (req: Request, res: Response) =
 
     return res.status(200).send(
       successResponse(
-        "Get Participants by Training ID Success",
+        "Get Participants by Training ID Success (Optimized & Fixed)",
         {
           data: safeData,
           totalCount,
@@ -121,14 +148,16 @@ export const getParticipantsByTrainingId = async (req: Request, res: Response) =
       )
     );
   } catch (error: any) {
+    console.error(error);
     return res.status(500).send(errorResponse(error.message, 500));
   }
 };
 
+
 export const getArchivedParticipantsByTrainingId = async (req: Request, res: Response) => {
   try {
     // Ambil 'id' training dari params, sama seperti di fungsi referensi Anda
-    const trainingId = req.params.id; 
+    const trainingId = req.params.id;
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 10;
     const search = (req.query.search as string) || "";
@@ -151,7 +180,7 @@ export const getArchivedParticipantsByTrainingId = async (req: Request, res: Res
     if (trainingId) {
       queryBuilder.andWhere("training.id = :trainingId", { trainingId });
     }
-    
+
     // ✅ KUNCI UTAMA: Filter HANYA yang sudah di-soft delete (diarsip)
     queryBuilder.andWhere("tp.deletedAt IS NOT NULL");
 
@@ -195,22 +224,22 @@ export const getArchivedParticipantsByTrainingId = async (req: Request, res: Res
         createdAt: p.createdAt,
         user: p.user
           ? {
-              id: p.user.id,
-              userName: p.user.userName,
-              role: p.user.role,
-              image: p.user.imageAvatar,
-            }
+            id: p.user.id,
+            userName: p.user.userName,
+            role: p.user.role,
+            image: p.user.imageAvatar,
+          }
           : null,
         status: tp.status ?? "Archived", // Tampilkan status dari 'tp' atau "Archived"
         deletedAt: tp.deletedAt, // Sertakan info kapan dihapus
         training: tp.training
           ? {
-              id: tp.training.id,
-              trainingName: tp.training.trainingName,
-              startDateTraining: tp.training.startDateTraining,
-              endDateTraining: tp.training.endDateTraining,
-              category: firstCategory,
-            }
+            id: tp.training.id,
+            trainingName: tp.training.trainingName,
+            startDateTraining: tp.training.startDateTraining,
+            endDateTraining: tp.training.endDateTraining,
+            category: firstCategory,
+          }
           : null,
       };
     }).filter(Boolean); // Hapus data null jika ada
