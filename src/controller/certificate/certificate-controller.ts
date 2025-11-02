@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "@/data-source";
 import { certificate } from "@/model/certificate";
-import { successResponse, errorResponse,validationResponse } from "@/utils/response"; // Assuming you have errorResponse
+import { successResponse, errorResponse, validationResponse } from "@/utils/response"; // Assuming you have errorResponse
 import { statusTraining } from "@/model/training-participant"; // Import the enum
 import Joi from "joi";
 import { trainingParticipant } from "@/model/training-participant";
@@ -55,9 +55,9 @@ export const getCertificatesByTrainingId = async (req: Request, res: Response) =
 
     // Dapatkan total data dan lakukan pagination
     const [participants, totalCount] = await queryBuilder
-        .skip(skip)
-        .take(limit)
-        .getManyAndCount();
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
 
     // ✅ Transformasi hasil agar sesuai dengan apa yang dibutuhkan UI
     const certificateData = participants.map((p) => {
@@ -136,7 +136,6 @@ export const publishCertificates = async (req: Request, res: Response) => {
         continue;
       }
 
-      // ✅ Hanya peserta dengan status 'selesai' yang boleh diperbarui sertifikatnya
       if (tp.status !== statusTraining.selesai) {
         skipped.push(`${participantId} (status: ${tp.status})`);
         continue;
@@ -189,7 +188,11 @@ export const publishCertificates = async (req: Request, res: Response) => {
         const outDir = path.join(process.cwd(), "public", "certificates");
         if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
-        const noLicense = `EXPIND-${trainingId}-${tp.participant.id}-${Date.now()}`;
+        const pad = (n: number) => n.toString().padStart(2, "0");
+        const now = new Date();
+        const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+        const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
+        const noLicense = `EXP-${makeShort(trainingId)}-${makeShort(tp.participant.id)}-${ts}-${rand}`;
         const filename = `${noLicense}.png`;
         const outPath = path.join(outDir, filename);
         const buffer = canvas.toBuffer("image/png");
@@ -241,3 +244,10 @@ export const publishCertificates = async (req: Request, res: Response) => {
   }
 };
 
+
+// Generate a compact, human-friendly license string:
+// Format: EXP-<TRAIN>-<PART8>-<YYYYMMDDHHMMSS>-<RAND6>
+const makeShort = (s: any) => String(s)
+  .replace(/[^a-zA-Z0-9]/g, "")
+  .slice(0, 8)
+  .toUpperCase();
