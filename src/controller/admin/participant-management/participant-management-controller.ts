@@ -122,7 +122,6 @@ export const getArchivedParticipantsByTrainingId = async (req: Request, res: Res
   try {
     // Ambil 'id' training dari params, sama seperti di fungsi referensi Anda
     const trainingId = req.params.id;
-    const trainingId = req.params.id;
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 10;
     const search = (req.query.search as string) || "";
@@ -145,7 +144,6 @@ export const getArchivedParticipantsByTrainingId = async (req: Request, res: Res
     if (trainingId) {
       queryBuilder.andWhere("training.id = :trainingId", { trainingId });
     }
-
 
     // ✅ KUNCI UTAMA: Filter HANYA yang sudah di-soft delete (diarsip)
     queryBuilder.andWhere("tp.deletedAt IS NOT NULL");
@@ -195,22 +193,11 @@ export const getArchivedParticipantsByTrainingId = async (req: Request, res: Res
             role: p.user.role,
             image: p.user.imageAvatar,
           }
-            id: p.user.id,
-            userName: p.user.userName,
-            role: p.user.role,
-            image: p.user.imageAvatar,
-          }
           : null,
         status: tp.status ?? "Archived", // Tampilkan status dari 'tp' atau "Archived"
         deletedAt: tp.deletedAt, // Sertakan info kapan dihapus
         training: tp.training
           ? {
-            id: tp.training.id,
-            trainingName: tp.training.trainingName,
-            startDateTraining: tp.training.startDateTraining,
-            endDateTraining: tp.training.endDateTraining,
-            category: firstCategory,
-          }
             id: tp.training.id,
             trainingName: tp.training.trainingName,
             startDateTraining: tp.training.startDateTraining,
