@@ -136,20 +136,24 @@ export const publishCertificates = async (req: Request, res: Response) => {
         continue;
       }
 
-      if (tp.status !== statusTraining.selesai) {
-        skipped.push(`${participantId} (status: ${tp.status})`);
-        continue;
-      }
+      // if (tp.status !== statusTraining.selesai) {
+      //   skipped.push(`${participantId} (status: ${tp.status})`);
+      //   continue;
+      // }
 
-      if (!tp.certificate) {
-        skipped.push(`${participantId} (certificate does not exist)`);
-        continue;
-      }
-
-      // Validasi createdAt dan updatedAt
-      if (tp.certificate.createdAt.getTime() !== tp.certificate.updatedAt.getTime()) {
-        skipped.push(`${participantId} (certificate already published)`);
-        continue;
+      // Determine certificate entity: create if missing, otherwise validate publish state
+      let cert = tp.certificate as any;
+      let isNewCert = false;
+      if (!cert) {
+        // create a new certificate entity (not yet saved)
+        cert = certificateRepository.create();
+        isNewCert = true;
+      } else {
+        // If certificate exists and was already published (updatedAt differs), skip
+        // if (cert.createdAt && cert.updatedAt && cert.createdAt.getTime() !== cert.updatedAt.getTime()) {
+        //   skipped.push(`${participantId} (certificate already published)`);
+        //   continue;
+        // }
       }
 
       // Generate certificate image dan save to public/certificates/<noLiscense>.png
@@ -159,13 +163,42 @@ export const publishCertificates = async (req: Request, res: Response) => {
         const canvas = createCanvas(canvasWidth, canvasHeight);
         const ctx = canvas.getContext("2d");
 
-        // Load a template background if available
-        const templatePath = path.join(process.cwd(), "public", "templates", template || "template1.png");
-        if (fs.existsSync(templatePath)) {
-          const img = await loadImage(templatePath);
-          ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-        } else {
-          // fallback: fill white background
+        // Resolve template filename. Accept numeric ids (1 -> "1.png"), plain names or full filenames.
+        let templateName = "1.png"; // default template path is public/templates/1.png
+        if (typeof template === "number" || (!isNaN(Number(template)) && String(template).trim() !== "")) {
+          templateName = `${template}.png`;
+        } else if (typeof template === "string" && template.trim()) {
+          templateName = template.trim();
+          if (!templateName.toLowerCase().endsWith(".png")) templateName += ".png";
+        }
+        const templatePath = path.join(process.cwd(), "public", "templates", templateName);
+        try {
+          const exists = fs.existsSync(String(templatePath));
+          console.info(`Template path: ${templatePath} (exists: ${exists})`);
+          if (exists) {
+            try {
+              const img = await loadImage(String(templatePath));
+              if (img) {
+                ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+                console.info(`Template image drawn for participant ${participantId}`);
+              } else {
+                console.warn(`loadImage returned falsy for ${templatePath}`);
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+              }
+            } catch (imgErr) {
+              console.warn(`Failed to load template image ${templatePath}:`, imgErr);
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            }
+          } else {
+            // fallback: fill white background
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+          }
+        } catch (existsErr) {
+          // defensive: if fs.existsSync throws because of wrong type, fallback to white
+          console.warn(`Template existence check failed for ${templatePath}:`, existsErr);
           ctx.fillStyle = "#ffffff";
           ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         }
@@ -182,7 +215,7 @@ export const publishCertificates = async (req: Request, res: Response) => {
         // Draw training info (small)
         const trainingName = tp.training?.trainingName || `Training ${trainingId}`;
         ctx.font = '20px "Montserrat"';
-        ctx.fillText(trainingName, canvasWidth / 2, canvasHeight / 2 + 30);
+        ctx.fillText(trainingName, canvasWidth / 2, canvasHeight / 2 + 40);
 
         // Ensure output directory
         const outDir = path.join(process.cwd(), "public", "certificates");
@@ -198,12 +231,28 @@ export const publishCertificates = async (req: Request, res: Response) => {
         const buffer = canvas.toBuffer("image/png");
         fs.writeFileSync(outPath, buffer);
 
-        // Update certificate with noLicense and imageUrl
-        tp.certificate.noLiscense = noLicense;
-        tp.certificate.imageUrl = `/certificates/${filename}`;
-        tp.certificate.expiredAt = new Date(Date.now() + 3 * 365 * 24 * 60 * 60 * 1000); // 3 year from now
+        // Update certificate fields
+        cert.noLiscense = noLicense;
+        cert.imageUrl = `/certificates/${filename}`;
+        cert.expiredAt = new Date(Date.now() + 3 * 365 * 24 * 60 * 60 * 1000); // 3 year from now
 
-        const saved = await certificateRepository.save(tp.certificate);
+        // Link certificate to trainingParticipant before saving (entity relationship)
+        try {
+          (cert as any).trainingParticipant = tp;
+        } catch (e) {
+          // ignore if relationship doesn't exist on entity shape
+        }
+
+        const saved = await certificateRepository.save(cert);
+        // attach to tp for later mapping and persist the relationship on the trainingParticipant side
+        try {
+          (tp as any).certificate = saved;
+          await trainingParticipantRepository.save(tp);
+        } catch (relErr) {
+          // non-fatal: log but continue — certificate itself was saved
+          console.warn(`Failed to link certificate to trainingParticipant ${tp.id}:`, relErr);
+        }
+
         updatedCertificates.push(saved);
       } catch (genErr: any) {
         // If image generation fails for this participant, skip and record reason

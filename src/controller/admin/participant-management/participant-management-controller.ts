@@ -12,7 +12,6 @@ import {
 } from "@/utils/response";
 import { trainingParticipant, statusTraining } from "@/model/training-participant";
 import { certificate } from "@/model/certificate";
-import { In } from "typeorm";
 
 const trainingRepository = AppDataSource.getRepository(training);
 const userRepository = AppDataSource.getRepository(user);
@@ -20,8 +19,6 @@ const participantRepository = AppDataSource.getRepository(participant);
 const trainingParticipantRepository = AppDataSource.getRepository(trainingParticipant)
 const trainingParticipantCategoryRepository = AppDataSource.getRepository(trainingParticipantCategory);
 const certificateRepository = AppDataSource.getRepository(certificate)
-
-
 
 export const getParticipantsByTrainingId = async (req: Request, res: Response) => {
   try {
@@ -36,6 +33,7 @@ export const getParticipantsByTrainingId = async (req: Request, res: Response) =
       .createQueryBuilder("participant")
       .leftJoinAndSelect("participant.user", "user")
       .leftJoinAndSelect("participant.trainingParticipant", "tp")
+      .leftJoinAndSelect("tp.certificate", "certificate")
       .leftJoinAndSelect("tp.training", "training")
       .leftJoinAndSelect("training.trainingCategory", "trainingCategory")
       .leftJoinAndSelect("trainingCategory.category", "category").orderBy("participant.createdAt", "DESC");
@@ -69,13 +67,7 @@ export const getParticipantsByTrainingId = async (req: Request, res: Response) =
 
     // ✅ Transform hasil
     const safeData = participants.map((p) => {
-      const trainingInfo = p.trainingParticipant.find((tp: any) => tp.training?.id === trainingId);
-
-      // Ekstrak kategori dari trainingCategory
-      const categoriesArray = trainingInfo?.training?.trainingCategory?.map((tc: any) => tc.category) || [];
-
-      // Ambil kategori pertama dari array, atau null jika tidak ada
-      const firstCategory = categoriesArray.length > 0 ? categoriesArray[0] : null;
+      const trainingParticipant = p.trainingParticipant.find((tp: any) => tp.training?.id === trainingId);
 
       return {
         id: p.id,
@@ -95,16 +87,8 @@ export const getParticipantsByTrainingId = async (req: Request, res: Response) =
             image: p.user.imageAvatar,
           }
           : null,
-        status: trainingInfo?.status ?? "unknown",
-        training: trainingInfo?.training
-          ? {
-            id: trainingInfo.training.id,
-            trainingName: trainingInfo.training.trainingName,
-            startDateTraining: trainingInfo.training.startDateTraining,
-            endDateTraining: trainingInfo.training.endDateTraining,
-            category: firstCategory,
-          }
-          : null,
+        status: trainingParticipant?.status ?? "unknown",
+        certificate: trainingParticipant?.certificate ?? null,
       };
     });
 
@@ -128,7 +112,7 @@ export const getParticipantsByTrainingId = async (req: Request, res: Response) =
 export const getArchivedParticipantsByTrainingId = async (req: Request, res: Response) => {
   try {
     // Ambil 'id' training dari params, sama seperti di fungsi referensi Anda
-    const trainingId = req.params.id; 
+    const trainingId = req.params.id;
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 10;
     const search = (req.query.search as string) || "";
@@ -151,7 +135,7 @@ export const getArchivedParticipantsByTrainingId = async (req: Request, res: Res
     if (trainingId) {
       queryBuilder.andWhere("training.id = :trainingId", { trainingId });
     }
-    
+
     // ✅ KUNCI UTAMA: Filter HANYA yang sudah di-soft delete (diarsip)
     queryBuilder.andWhere("tp.deletedAt IS NOT NULL");
 
@@ -195,22 +179,22 @@ export const getArchivedParticipantsByTrainingId = async (req: Request, res: Res
         createdAt: p.createdAt,
         user: p.user
           ? {
-              id: p.user.id,
-              userName: p.user.userName,
-              role: p.user.role,
-              image: p.user.imageAvatar,
-            }
+            id: p.user.id,
+            userName: p.user.userName,
+            role: p.user.role,
+            image: p.user.imageAvatar,
+          }
           : null,
         status: tp.status ?? "Archived", // Tampilkan status dari 'tp' atau "Archived"
         deletedAt: tp.deletedAt, // Sertakan info kapan dihapus
         training: tp.training
           ? {
-              id: tp.training.id,
-              trainingName: tp.training.trainingName,
-              startDateTraining: tp.training.startDateTraining,
-              endDateTraining: tp.training.endDateTraining,
-              category: firstCategory,
-            }
+            id: tp.training.id,
+            trainingName: tp.training.trainingName,
+            startDateTraining: tp.training.startDateTraining,
+            endDateTraining: tp.training.endDateTraining,
+            category: firstCategory,
+          }
           : null,
       };
     }).filter(Boolean); // Hapus data null jika ada

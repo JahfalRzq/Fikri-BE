@@ -21,7 +21,7 @@ router.use("/dashboard", DashboardData);
 router.use("/setting", setting);
 router.use("/coach", CoachRoute);
 router.use("/category", CategoryRoute);
-router.use("/certificate", CertificateManagementRoute);
+router.use("/certificates", CertificateManagementRoute);
 router.use("/participant-dashboard", participantDashboard);
 
 

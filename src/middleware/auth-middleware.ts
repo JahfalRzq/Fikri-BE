@@ -19,8 +19,8 @@ export const authMiddleware = (
   const authHeader = request.get("Authorization");
 
   // 1. Cek jika header ada
-    console.log("--- AUTH MIDDLEWARE START ---");
-    console.log("Header:", authHeader);
+    // console.log("--- AUTH MIDDLEWARE START ---");
+    // console.log("Header:", authHeader);
 
   if (!authHeader) {
     return response
@@ -29,7 +29,7 @@ export const authMiddleware = (
   }
 
   const token = authHeader.split(" ")[1];
-  console.log("Token:", token);
+  // console.log("Token:", token);
 
   try {
     const jwtPayload = jwt.verify(token, process.env.JWT_SECRET!);
