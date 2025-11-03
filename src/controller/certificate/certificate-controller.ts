@@ -109,6 +109,99 @@ export const getCertificatesByTrainingId = async (req: Request, res: Response) =
 };
 
 
+export const getCertificateByNoLicense = async (req: Request, res: Response) => {
+  try {
+    const { noLicense } = req.params;
+    if (!noLicense || typeof noLicense !== "string") {
+      return res.status(400).send(errorResponse("Invalid or missing certificate noLicense", 400));
+    }
+
+    // Cari sertifikat berdasarkan noLicense dengan relasi yang diperlukan
+    const certificate = await certificateRepository.findOne({
+      where: { noLiscense: noLicense },
+      relations: [
+        "trainingParticipant",
+        "trainingParticipant.participant", // participant
+        "trainingParticipant.training",    // training
+        "trainingParticipant.coach",       // coach
+        "trainingParticipant.trainingParticipantCategory", // join table
+        "trainingParticipant.trainingParticipantCategory.category", // category melalui join table
+      ],
+    });
+
+    if (!certificate) {
+      return res.status(404).send(errorResponse("Certificate not found", 404));
+    }
+
+    // Ambil data trainingParticipant
+    const tp = certificate.trainingParticipant;
+
+    // Ambil category dari join table jika ada
+    const category = tp?.trainingParticipantCategory?.category || null;
+
+    // Bentuk response yang lebih lengkap
+    const responseData = {
+      id: certificate.id,
+      noLiscense: certificate.noLiscense,
+      imageUrl: certificate.imageUrl,
+      expiredAt: certificate.expiredAt,
+      createdAt: certificate.createdAt,
+      updatedAt: certificate.updatedAt, // Tambahkan ini
+      trainingParticipant: tp
+        ? {
+            id: tp.id,
+            status: tp.status,
+            // Tambahkan field dari trainingParticipant
+            startDateTraining: tp.startDateTraining,
+            endDateTraining: tp.endDateTraining,
+            ttdImage: tp.ttdImage,
+            signatoryName: tp.signatoryName,
+            signatoryPosition: tp.signatoryPosition,
+            participant: {
+              id: tp.participant?.id,
+              firstName: tp.participant?.firstName,
+              lastName: tp.participant?.lastName,
+              email: tp.participant?.email,
+              // Tambahkan field dari participant
+              company: tp.participant?.company,
+              jobTitle: tp.participant?.jobTitle,
+              // tambahkan field lain dari participant jika diperlukan
+            },
+            training: {
+              id: tp.training?.id,
+              trainingName: tp.training?.trainingName,
+              // tambahkan field lain dari training jika diperlukan
+            },
+            coach: tp.coach // Kembalikan data coach secara lengkap
+              ? {
+                  id: tp.coach.id,
+                  coachName: tp.coach.coachName,
+                  // tambahkan field lain dari coach jika diperlukan
+                }
+              : null,
+            category: category // Kembalikan data category dari join table
+              ? {
+                  id: category.id,
+                  categoryName: category.categoryName,
+                  trainingCode: category.trainingCode,
+                  // tambahkan field lain dari category jika diperlukan
+                }
+              : null,
+          }
+        : null,
+    };
+
+    return res.status(200).send(
+      successResponse("Certificate retrieved successfully", responseData, 200)
+    );
+  } catch (error: any) {
+    console.error("Error retrieving certificate:", error);
+    return res.status(500).send(errorResponse(error.message, 500));
+  }
+};
+
+
+
 export const publishCertificates = async (req: Request, res: Response) => {
   try {
     const { participantIds, trainingId, template } = req.body;
@@ -292,6 +385,10 @@ export const publishCertificates = async (req: Request, res: Response) => {
     return res.status(500).send(errorResponse(error.message, 500));
   }
 };
+
+
+
+
 
 
 // Generate a compact, human-friendly license string:

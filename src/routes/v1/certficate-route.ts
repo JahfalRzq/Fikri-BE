@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   getCertificatesByTrainingId,
   publishCertificates,
+  getCertificateByNoLicense
  
 } from "@/controller/certificate/certificate-controller";
 
@@ -22,5 +23,10 @@ router.put("/publish", [
   onlyAdminMiddleware,
   publishCertificates,
 ]);
+
+router.get("/get-certificate-by-no-license/:noLicense", [
+  getCertificateByNoLicense,
+]);
+
 
 export default router;
