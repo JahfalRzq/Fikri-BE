@@ -72,5 +72,13 @@ if (process.env.NODE_ENV !== "production") {
   })
 }
 
+app.use('/certificates', express.static(path.join(process.cwd(), 'public', 'certificates')));
+app.use('/templates', express.static(path.join(process.cwd(), 'public', 'templates')));
+
+app.use('/certificates', (req, res, next) => {
+  console.log(`📄 Certificate request: ${req.url}`);
+  next();
+});
+
 // Export for Vercel
 export default app
