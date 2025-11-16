@@ -6,6 +6,8 @@ import { coach } from "@/model/coach";
 import { training } from "@/model/training";
 import { category } from "@/model/category";
 import { successResponse } from "@/utils/response";
+import { IsNull, Not, Equal, And } from "typeorm";
+
 
 const participantTrainingRepository = AppDataSource.getRepository(trainingParticipant);
 const certificateRepository = AppDataSource.getRepository(certificate);
@@ -33,9 +35,13 @@ export const getDashboardData = async (req: Request, res: Response) => {
       status: statusTraining.selesai,
     });
 
-    // 4. Sertifikat Terkirim
-    const totalCertificatesSent = await certificateRepository.count(); // Menghitung jumlah entitas certificate
-
+     // 4. Sertifikat Terkirim (berdasarkan noLiscense dan imageUrl tidak null dan tidak kosong)
+    const totalCertificatesSent = await certificateRepository.count({
+      where: {
+        noLiscense: And(Not(IsNull()), Not(Equal(""))), // Tidak null dan tidak string kosong
+        imageUrl: And(Not(IsNull()), Not(Equal(""))),   // Tidak null dan tidak string kosong
+      }
+    });
     // 5. Jumlah Pelatih
     const totalTrainers = await coachRepository.count();
 
