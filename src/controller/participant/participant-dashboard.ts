@@ -212,7 +212,7 @@ export const getParticipantDashboardSummary = async (req: Request, res: Response
       .groupBy("tp.status") // Kelompokkan berdasarkan status
       .getRawMany(); // Dapatkan hasil mentah [ { status: 'selesai', count: '5' }, ... ]
 
-    // 4. Inisialisasi hasil perhitungan
+    // 4. Inisialisasi hasil perhitungan status
     let statusCount = {
       [statusTraining.selesai]: 0,
       [statusTraining.sedangBerlangsung]: 0,
@@ -222,7 +222,7 @@ export const getParticipantDashboardSummary = async (req: Request, res: Response
 
     let totalTrainingDiikuti = 0;
 
-    // 5. Proses hasil query
+    // 5. Proses hasil query stats
     for (const row of statsQuery) {
       const status = row.status as statusTraining;
       const count = parseInt(row.count, 10); // Hasil 'count' adalah string
@@ -233,13 +233,21 @@ export const getParticipantDashboardSummary = async (req: Request, res: Response
       totalTrainingDiikuti += count;
     }
 
-    // 6. Sesuai definisi Anda, sertifikat siap download = status selesai
-    const totalSertifikatSiap = statusCount[statusTraining.selesai];
+    // 6. Refactor: Hitung total sertifikat siap berdasarkan keberadaan dan validitas data certificate
+    const totalSertifikatSiap = await certificateRepository
+      .createQueryBuilder("certificate")
+      .innerJoin("certificate.trainingParticipant", "tp") // Join ke trainingParticipant
+      .where("tp.participantId = :participantId", { participantId }) // Filter berdasarkan participant
+      .andWhere("certificate.noLiscense IS NOT NULL") // Tidak null
+      .andWhere("certificate.noLiscense != ''")        // Tidak string kosong
+      .andWhere("certificate.imageUrl IS NOT NULL")    // Tidak null
+      .andWhere("certificate.imageUrl != ''")           // Tidak string kosong
+      .getCount(); // Hitung jumlah entitas certificate yang memenuhi kriteria
 
     // 7. Siapkan data respons
     const responseData = {
-      totalTrainingDiikuti,
-      totalSertifikatSiap,
+      totalTrainingDiikuti, // Tetap menggunakan hasil dari query stats
+      totalSertifikatSiap, // Sekarang dihitung berdasarkan certificate yang valid
       statusCount: {
         selesai: statusCount[statusTraining.selesai],
         sedangBerlangsung: statusCount[statusTraining.sedangBerlangsung],
@@ -258,6 +266,7 @@ export const getParticipantDashboardSummary = async (req: Request, res: Response
     );
 
   } catch (error: any) {
+    console.error("Error fetching participant dashboard summary: ", error); // Log error untuk debugging
     return res.status(500).send(errorResponse(error.message, 500));
   }
 };
