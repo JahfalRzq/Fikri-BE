@@ -282,6 +282,9 @@ export const getTrainingById = async (req: Request, res: Response) => {
       price: result.price,
       startDateTraining: result.startDateTraining,
       endDateTraining: result.endDateTraining,
+      ttdImage : result.ttdImage,
+      signatoryName : result.signatoryName,
+      signatoryPosition : result.signatoryPosition,
       createdAt: result.createdAt,
       updatedAt: result.updatedAt,
       coach: result.trainingCoach
