@@ -12,6 +12,9 @@ import {
 } from "@/utils/response";
 import { trainingParticipant, statusTraining } from "@/model/training-participant";
 import { certificate } from "@/model/certificate";
+import * as xlsx from "xlsx";
+import { In } from "typeorm";
+
 
 const trainingRepository = AppDataSource.getRepository(training);
 const userRepository = AppDataSource.getRepository(user);
@@ -1007,6 +1010,200 @@ export const restoreParticipant = async (req: Request, res: Response) => {
     return res.status(500).json({
       message: error instanceof Error ? error.message : "Unknown error occurred",
     });
+  } finally {
+    await queryRunner.release();
+  }
+};
+
+
+export const bulkUploadParticipants = async (req: Request, res: Response) => {
+  const queryRunner = AppDataSource.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+
+  try {
+    // --- CHECK FILE ---
+    if (!req.file) {
+      return res.status(400).send(errorResponse("No Excel file uploaded.", 400));
+    }
+
+    // --- READ EXCEL ---
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const excelRows: any[] = xlsx.utils.sheet_to_json(worksheet);
+
+    if (excelRows.length === 0) {
+      return res.status(400).send(errorResponse("Excel file is empty.", 400));
+    }
+
+    // --- VALIDATE TRAINING ID ---
+    const trainingId = req.body.training || req.query.training;
+    if (!trainingId) {
+      return res.status(422).send(errorResponse("Training ID is required.", 422));
+    }
+
+    const trainingRec = await queryRunner.manager.findOne(training, {
+      where: { id: trainingId },
+      relations: ["trainingCategory", "trainingCategory.category", "trainingCoach"],
+    });
+
+    if (!trainingRec) {
+      return res.status(404).send(errorResponse("Training not found.", 404));
+    }
+
+    if (!trainingRec.trainingCoach) {
+      return res.status(400).send(errorResponse("Training coach is missing.", 400));
+    }
+
+    // ===============================
+    //       VALIDATION PRE-FETCH
+    // ===============================
+
+    const validationErrors: string[] = [];
+
+    // Ambil semua ID user dari file Excel untuk pencarian efisien
+    // Asumsikan kolom di Excel yang menyimpan ID user adalah 'userId'
+    const userIdsInFile = Array.from(
+      new Set(
+        excelRows
+          .filter(r => r.userId) // Filter baris yang userId-nya tidak kosong
+          .map(r => r.userId)
+      )
+    );
+
+    // Ambil data user dari DB dalam satu query
+    const users = await queryRunner.manager.findBy(user, { id: In(userIdsInFile) });
+    const userMap = new Map(users.map(u => [u.id, u])); // Map untuk pencarian cepat
+
+    // Schema validasi untuk setiap baris di Excel (hanya untuk participant baru, dikaitkan ke user existing)
+    const schema = Joi.object({
+      // Asumsikan user diidentifikasi oleh 'userId' di file Excel
+      userId: Joi.string().required(), // Validasi bahwa userId wajib ada
+      email: Joi.string().email().required(),
+      firstName: Joi.string().required(),
+      lastName: Joi.string().required(),
+      signatoryName: Joi.string().required(),
+      signatoryPosition: Joi.string().required(),
+      ttdImage: Joi.string().allow("").required(),
+      company: Joi.string().optional(),
+      companyAddress: Joi.string().optional(),
+      phone: Joi.string().optional(),
+      jobTitle: Joi.string().optional(),
+      officePhone: Joi.string().optional(),
+      message: Joi.string().optional(),
+    });
+
+    const successfulCreations: any[] = [];
+    const failedCreations: any[] = [];
+
+    for (let i = 0; i < excelRows.length; i++) {
+      const row = excelRows[i];
+      const rowIndex = i + 2; // +2 karena header dianggap row 1
+
+      // Validasi schema
+      const { error: validationError } = schema.validate(row);
+      if (validationError) {
+        failedCreations.push({ rowIndex, reason: `Schema Validation Error: ${validationError.message}` });
+        continue;
+      }
+
+      // --- PROSES: NEW PARTICIPANT (dikaitkan ke user existing) ---
+      // 1. Validasi User Existing
+      const u = userMap.get(row.userId);
+      if (!u) {
+         // Jika user tidak ditemukan di DB berdasarkan ID dari Excel
+         failedCreations.push({ rowIndex, userId: row.userId, reason: "User with this ID does not exist in the database." });
+         continue; // Lewati baris ini
+      }
+
+      // 2. Buat dan simpan Participant Baru yang dikaitkan ke User yang sudah ada
+      const newParticipant = new participant();
+      newParticipant.email = row.email;
+      newParticipant.firstName = row.firstName;
+      newParticipant.lastName = row.lastName;
+      newParticipant.company = row.company;
+      newParticipant.companyAddress = row.companyAddress;
+      newParticipant.phone = row.phone;
+      newParticipant.jobTitle = row.jobTitle;
+      newParticipant.officePhone = row.officePhone;
+      newParticipant.message = row.message;
+      newParticipant.user = u; // Kaitkan participant ke user yang sudah ada
+
+      const savedParticipant = await queryRunner.manager.save(participant, newParticipant);
+
+      // 3. Buat dan simpan Training Participant
+      const newTP = new trainingParticipant();
+      newTP.training = trainingRec;
+      newTP.participant = savedParticipant;
+      newTP.status = statusTraining.belumMulai;
+      newTP.coach = trainingRec.trainingCoach;
+      newTP.signatoryName = row.signatoryName;
+      newTP.signatoryPosition = row.signatoryPosition;
+      newTP.ttdImage = row.ttdImage;
+      newTP.startDateTraining = trainingRec.startDateTraining;
+      newTP.endDateTraining = trainingRec.endDateTraining;
+
+      const savedTP = await queryRunner.manager.save(trainingParticipant, newTP);
+
+      // 4. Buat dan simpan Training Participant Category
+      const tpcPromises = trainingRec.trainingCategory.map(async (tc) => {
+        const newTPC = new trainingParticipantCategory();
+        (newTPC as any).trainingParticipant = [savedTP];
+        (newTPC as any).category = tc.category;
+        return queryRunner.manager.save(trainingParticipantCategory, newTPC);
+      });
+      await Promise.all(tpcPromises);
+
+      // 5. Buat dan simpan Certificate
+      const cert = new certificate();
+      cert.trainingParticipant = savedTP;
+      cert.imageUrl = "";
+      cert.noLiscense = "";
+      cert.expiredAt = new Date();
+      const savedCert = await queryRunner.manager.save(certificate, cert);
+
+      // Kaitkan certificate ke trainingParticipant
+      savedTP.certificate = savedCert;
+      await queryRunner.manager.save(trainingParticipant, savedTP);
+
+      successfulCreations.push({
+        rowIndex,
+        participantId: savedParticipant.id,
+        userId: u.id, // Termasuk ID user yang dikaitkan jika perlu
+        name: `${savedParticipant.firstName} ${savedParticipant.lastName}`,
+        status: "Created as New Participant linked to existing User"
+      });
+    }
+
+    // Jika ada kegagalan selama loop (misalnya user tidak ditemukan), transaksi akan di-rollback
+    if (failedCreations.length > 0) {
+      await queryRunner.rollbackTransaction();
+      const totalFailed = failedCreations.length;
+      const totalSuccess = successfulCreations.length;
+      const errorMessage = `Process completed with errors. Success: ${totalSuccess}, Failed: ${totalFailed}. Details: ${JSON.stringify(failedCreations)}`;
+      return res.status(422).send(errorResponse(errorMessage, 422));
+    }
+
+    await queryRunner.commitTransaction();
+
+    return res.status(201).send(
+      successResponse(
+        `${successfulCreations.length} participants successfully created and registered to training.`,
+        {
+          totalParticipants: successfulCreations.length,
+          data: successfulCreations,
+        },
+        201
+      )
+    );
+
+  } catch (error) {
+    await queryRunner.rollbackTransaction();
+    console.error("Bulk participant upload error:", error);
+    return res.status(500).send(
+      errorResponse(error instanceof Error ? error.message : "Unknown Error", 500)
+    );
   } finally {
     await queryRunner.release();
   }

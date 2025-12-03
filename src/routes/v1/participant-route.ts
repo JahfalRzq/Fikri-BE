@@ -8,12 +8,15 @@ import {
   deleteParticipant,
   changeStatusParticipant,
   restoreParticipant,
-  getArchivedParticipantsByTrainingId
+  getArchivedParticipantsByTrainingId,
+  bulkUploadParticipants
 } from "@/controller/admin/participant-management/participant-management-controller";
 import {
   authMiddleware,
   onlyAdminMiddleware,
 } from "@/middleware/auth-middleware";
+import multer from "multer";
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
 
@@ -60,5 +63,10 @@ router.put("/restore-participant/:id", [
   authMiddleware,
   onlyAdminMiddleware,
   restoreParticipant,
+]);
+router.post("/bulk-upload-participant", [
+  upload.single('file'),
+  authMiddleware,
+  bulkUploadParticipants,
 ]);
 export default router;
