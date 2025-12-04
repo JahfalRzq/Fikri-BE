@@ -66,7 +66,6 @@ router.put("/restore-participant/:id", [
 ]);
 router.post("/bulk-upload-participant", [
   upload.single('file'),
-  authMiddleware,
   bulkUploadParticipants,
 ]);
 export default router;

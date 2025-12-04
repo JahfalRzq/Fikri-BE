@@ -7,31 +7,55 @@ export class participant {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+    default: null
+  })
   email: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+    default: null
+  })
   firstName: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+    default: null
+  })
   lastName: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+    default: null
+  })
   company: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+    default: null
+  })
   companyAddress: string;
 
   @Column({ nullable: true })
   phone: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+    default: null
+  })
   jobTitle: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+    default: null
+  })
   officePhone: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+    default: null
+  })
   message: string;
 
   @ManyToOne(() => user, (u) => u.participants)

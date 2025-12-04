@@ -14,6 +14,8 @@ import { trainingParticipant, statusTraining } from "@/model/training-participan
 import { certificate } from "@/model/certificate";
 import * as xlsx from "xlsx";
 import { In } from "typeorm";
+import { coach } from "@/model/coach";
+
 
 
 const trainingRepository = AppDataSource.getRepository(training);
@@ -22,6 +24,350 @@ const participantRepository = AppDataSource.getRepository(participant);
 const trainingParticipantRepository = AppDataSource.getRepository(trainingParticipant)
 const trainingParticipantCategoryRepository = AppDataSource.getRepository(trainingParticipantCategory);
 const certificateRepository = AppDataSource.getRepository(certificate)
+
+
+export const bulkUploadParticipants = async (req: Request, res: Response) => {
+  const queryRunner = AppDataSource.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+
+  try {
+    if (!req.file) {
+      return res.status(400).send(errorResponse("No Excel file uploaded.", 400));
+    }
+
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const excelRows: any[] = xlsx.utils.sheet_to_json(worksheet);
+
+    if (excelRows.length === 0) {
+      return res.status(400).send(errorResponse("Excel file is empty.", 400));
+    }
+
+    // helper parse boolean (returns boolean | undefined)
+    const parseBoolOrUndef = (val: any): boolean | undefined => {
+      if (typeof val === "boolean") return val;
+      if (typeof val === "string") {
+        const v = val.trim().toLowerCase();
+        if (["true", "1", "yes", "y"].includes(v)) return true;
+        if (["false", "0", "no", "n"].includes(v)) return false;
+      }
+      if (typeof val === "number") return val === 1;
+      return undefined;
+    };
+
+    // Collect all unique training names from Excel
+    const trainingNamesInFile = Array.from(
+      new Set(
+        excelRows
+          .filter(r => r['judul training'])
+          .map(r => String(r['judul training']).trim())
+      )
+    );
+
+    if (trainingNamesInFile.length === 0) {
+      return res.status(422).send(
+        errorResponse("No 'judul training' found in Excel file.", 422)
+      );
+    }
+
+    // Fetch all trainings by name (case-insensitive)
+    const trainingsFromDB = await queryRunner.manager
+      .createQueryBuilder(training, "t")
+      .where("LOWER(t.trainingName) IN (:...names)", {
+        names: trainingNamesInFile.map(n => n.toLowerCase())
+      })
+      .leftJoinAndSelect("t.trainingCategory", "trainingCategory")
+      .leftJoinAndSelect("trainingCategory.category", "category")
+      .leftJoinAndSelect("t.trainingCoach", "trainingCoach")
+      .getMany();
+
+    // Create a map: trainingName.toLowerCase() -> training object
+    const trainingMap = new Map<string, training>();
+    trainingsFromDB.forEach(t => {
+      trainingMap.set(t.trainingName.toLowerCase(), t);
+    });
+
+    // Prefetch participants
+    const emailsInFile = Array.from(
+      new Set(
+        excelRows.filter(r => r.email).map(r => String(r.email).trim())
+      )
+    );
+    const namesInFile = Array.from(
+      new Set(
+        excelRows.filter(r => r['nama peserta']).map(r => String(r['nama peserta']).trim())
+      )
+    );
+    const instrukturNames = Array.from(
+      new Set(
+        excelRows.filter(r => r.instruktur).map(r => String(r.instruktur).trim())
+      )
+    );
+
+    const participantsByEmail = emailsInFile.length > 0
+      ? await queryRunner.manager.findBy(participant, { email: In(emailsInFile) })
+      : [];
+    const participantsByFirstName = namesInFile.length > 0
+      ? await queryRunner.manager.createQueryBuilder(participant, "p")
+        .where("p.firstName IN (:...names)", { names: namesInFile })
+        .getMany()
+      : [];
+
+    const participantEmailMap = new Map(participantsByEmail.map(p => [p.email, p]));
+    const participantFirstNameMap = new Map(participantsByFirstName.map(p => [p.firstName, p]));
+
+    // Prefetch coaches by name
+    let coachMap = new Map<string, coach>();
+    if (instrukturNames.length > 0) {
+      const coaches = await queryRunner.manager
+        .createQueryBuilder(coach, "c")
+        .where("c.coachName IN (:...names)", { names: instrukturNames })
+        .getMany();
+      coachMap = new Map(coaches.map(c => [c.coachName, c]));
+    }
+
+    // Loose schema validation
+    const schema = Joi.object({
+      no: Joi.any().optional(),
+      tanggal: Joi.any().optional(),
+      'judul training': Joi.string().required(), // NOW REQUIRED
+      'nama peserta': Joi.string().optional(),
+      instansi: Joi.string().optional(),
+      jabatan: Joi.string().optional(),
+      'no hp': Joi.any().optional(),  // ✅ Sekarang terima number atau string
+      'penanggung jawab peserta': Joi.string().optional(),
+      instruktur: Joi.string().optional(),
+      ruangan: Joi.string().optional(),
+      email: Joi.string().email().optional(),
+      keterangan: Joi.string().optional(),
+      'non WT': Joi.any().optional(),
+      pic: Joi.string().optional(),
+      'alamat pengiriman': Joi.string().optional(),
+      'joinan apa bila tidak': Joi.string().optional(),
+      notes: Joi.string().optional(),
+      'nama pendaftaran (bool)': Joi.any().optional(),
+      'absensi (bool)': Joi.any().optional(),
+      'nametag (bool)': Joi.any().optional(),
+      cover: Joi.any().optional(),
+      terima: Joi.any().optional(),
+      invoice: Joi.any().optional(),
+      'pajak (bool)': Joi.any().optional(),
+    });
+
+    const successfulCreations: any[] = [];
+    const failedCreations: any[] = [];
+
+    for (let i = 0; i < excelRows.length; i++) {
+      const row = excelRows[i];
+      const rowIndex = i + 2;
+
+      const { error: validationError } = schema.validate(row);
+      if (validationError) {
+        failedCreations.push({
+          rowIndex,
+          reason: `Schema Validation Error: ${validationError.message}`
+        });
+        continue;
+      }
+
+      // Find training by name
+      const trainingNameFromRow = row['judul training']
+        ? String(row['judul training']).trim()
+        : '';
+
+      if (!trainingNameFromRow) {
+        failedCreations.push({
+          rowIndex,
+          reason: "Missing 'judul training' column."
+        });
+        continue;
+      }
+
+      const trainingRec = trainingMap.get(trainingNameFromRow.toLowerCase());
+      if (!trainingRec) {
+        failedCreations.push({
+          rowIndex,
+          reason: `Training '${trainingNameFromRow}' not found in database.`
+        });
+        continue;
+      }
+
+      // 1) Find participant by email then firstName
+      let matchedParticipant: participant | undefined;
+      if (row.email && participantEmailMap.has(String(row.email).trim())) {
+        matchedParticipant = participantEmailMap.get(String(row.email).trim());
+      } else if (row['nama peserta'] && participantFirstNameMap.has(String(row['nama peserta']).trim())) {
+        matchedParticipant = participantFirstNameMap.get(String(row['nama peserta']).trim());
+      }
+
+      // 2) If not found -> create participant
+      if (!matchedParticipant) {
+        if (!row['nama peserta'] && !row.email) {
+          failedCreations.push({
+            rowIndex,
+            reason: "Missing 'nama peserta' and 'email' — cannot create participant."
+          });
+          continue;
+        }
+
+        const newP = new participant();
+        const [firstName, ...lastParts] = (row['nama peserta'] || "").split(" ");
+        newP.firstName = firstName || (row.email ? row.email.split("@")[0] : "Unknown");
+        newP.lastName = lastParts.join(" ").trim() || "";
+        newP.email = row.email ? String(row.email).trim() : "";
+        newP.company = row.instansi ? String(row.instansi) : "";
+        newP.phone = row['no hp'] ? String(row['no hp']) : "";
+        newP.jobTitle = row.jabatan ? String(row.jabatan) : "";
+        newP.companyAddress = row['alamat pengiriman'] ? String(row['alamat pengiriman']) : "";
+        newP.officePhone = "";
+        newP.message = "";
+
+        try {
+          matchedParticipant = await queryRunner.manager.save(participant, newP);
+          if (matchedParticipant.email) participantEmailMap.set(matchedParticipant.email, matchedParticipant);
+          if (matchedParticipant.firstName) participantFirstNameMap.set(matchedParticipant.firstName, matchedParticipant);
+        } catch (err) {
+          failedCreations.push({
+            rowIndex,
+            reason: `Failed to create participant: ${(err as Error).message}`
+          });
+          continue;
+        }
+      }
+
+      // 3) Create trainingParticipant
+      try {
+        const newTP = new trainingParticipant();
+        newTP.training = trainingRec;
+        newTP.participant = matchedParticipant;
+        newTP.status = statusTraining.belumMulai;
+
+        // Coach: prefer instruktur name match, else training coach
+        if (row.instruktur && coachMap.has(String(row.instruktur).trim())) {
+          newTP.coach = coachMap.get(String(row.instruktur).trim()) as any;
+        } else {
+          newTP.coach = trainingRec.trainingCoach;
+        }
+
+        // Map fields
+        newTP.penanggung_jawab_peserta = row['penanggung jawab peserta']
+          ? String(row['penanggung jawab peserta'])
+          : "";
+        newTP.ruangan = row.ruangan ? String(row.ruangan) : "";
+        newTP.keterangan = row.keterangan ? String(row.keterangan) : "";
+        newTP.non_wt = row['non WT'] ? String(row['non WT']) : "";
+        newTP.pic = row.pic ? String(row.pic) : "";
+        newTP.alamat_pengiriman = row['alamat pengiriman']
+          ? String(row['alamat pengiriman'])
+          : "";
+        newTP.joinan_atau_tidak = row['joinan apa bila tidak']
+          ? String(row['joinan apa bila tidak'])
+          : "";
+
+        // Boolean fields
+        newTP.nama_pendaftaran = parseBoolOrUndef(row['nama pendaftaran (bool)']) ?? null as any;
+        newTP.absensi = parseBoolOrUndef(row['absensi (bool)']) ?? null as any;
+        newTP.nametag = parseBoolOrUndef(row['nametag (bool)']) ?? null as any;
+        newTP.cover = parseBoolOrUndef(row.cover) ?? null as any;
+        newTP.terima = parseBoolOrUndef(row.terima) ?? null as any;
+        newTP.invoice = parseBoolOrUndef(row.invoice) ?? null as any;
+        newTP.pajak = parseBoolOrUndef(row['pajak (bool)']) ?? null as any;
+
+        // Signatory/ttd and dates from training master
+        newTP.signatoryName = trainingRec.signatoryName || "";
+        newTP.signatoryPosition = trainingRec.signatoryPosition || "";
+        newTP.ttdImage = trainingRec.ttdImage || "";
+        newTP.startDateTraining = trainingRec.startDateTraining;
+        newTP.endDateTraining = trainingRec.endDateTraining;
+
+        const savedTP = await queryRunner.manager.save(trainingParticipant, newTP);
+
+        // 4) Create trainingParticipantCategory
+        let firstSavedTPC: any = null;
+        if (Array.isArray(trainingRec.trainingCategory) && trainingRec.trainingCategory.length > 0) {
+          for (const tc of trainingRec.trainingCategory) {
+            const newTPC = new trainingParticipantCategory();
+            (newTPC as any).category = tc.category;
+            const savedTPC = await queryRunner.manager.save(trainingParticipantCategory, newTPC);
+            if (!firstSavedTPC) firstSavedTPC = savedTPC;
+          }
+
+          if (firstSavedTPC) {
+            savedTP.trainingParticipantCategory = firstSavedTPC;
+            await queryRunner.manager.save(trainingParticipant, savedTP);
+          }
+        }
+
+        // 5) Create certificate
+        const cert = new certificate();
+        cert.trainingParticipant = savedTP;
+        cert.imageUrl = "";
+        cert.noLiscense = "";
+        const tanggalVal = row.tanggal ? new Date(row.tanggal) : null;
+        cert.expiredAt = (tanggalVal && !isNaN(tanggalVal.getTime()))
+          ? tanggalVal
+          : trainingRec.endDateTraining;
+        const savedCert = await queryRunner.manager.save(certificate, cert);
+
+        // Link certificate -> trainingParticipant
+        savedTP.certificate = savedCert;
+        await queryRunner.manager.save(trainingParticipant, savedTP);
+
+        successfulCreations.push({
+          rowIndex,
+          trainingName: trainingRec.trainingName,
+          participantId: matchedParticipant.id,
+          participantName: `${matchedParticipant.firstName} ${matchedParticipant.lastName}`.trim(),
+          trainingParticipantId: savedTP.id,
+          certificateId: savedCert.id,
+        });
+
+      } catch (err) {
+        failedCreations.push({
+          rowIndex,
+          reason: `Failed to create trainingParticipant/certificate: ${(err as Error).message}`
+        });
+        continue;
+      }
+    } // end rows
+
+    if (failedCreations.length > 0) {
+      await queryRunner.rollbackTransaction();
+      return res.status(422).send({
+        message: `Process completed with errors. Success: ${successfulCreations.length}, Failed: ${failedCreations.length}`,
+        code: 422,
+        error: true,
+        data: {
+          successfulCreations,
+          failedCreations
+        }
+      });
+    }
+
+    await queryRunner.commitTransaction();
+    return res.status(201).send(
+      successResponse(
+        `${successfulCreations.length} trainingParticipants (with participants & certificates) created.`,
+        { total: successfulCreations.length, data: successfulCreations },
+        201
+      )
+    );
+
+  } catch (error) {
+    await queryRunner.rollbackTransaction();
+    console.error("Bulk participant upload error:", error);
+    return res.status(500).send(
+      errorResponse(
+        error instanceof Error ? error.message : "Unknown Error",
+        500
+      )
+    );
+  } finally {
+    await queryRunner.release();
+  }
+};
 
 export const getParticipantsByTrainingId = async (req: Request, res: Response) => {
   try {
@@ -1016,195 +1362,3 @@ export const restoreParticipant = async (req: Request, res: Response) => {
 };
 
 
-export const bulkUploadParticipants = async (req: Request, res: Response) => {
-  const queryRunner = AppDataSource.createQueryRunner();
-  await queryRunner.connect();
-  await queryRunner.startTransaction();
-
-  try {
-    // --- CHECK FILE ---
-    if (!req.file) {
-      return res.status(400).send(errorResponse("No Excel file uploaded.", 400));
-    }
-
-    // --- READ EXCEL ---
-    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const excelRows: any[] = xlsx.utils.sheet_to_json(worksheet);
-
-    if (excelRows.length === 0) {
-      return res.status(400).send(errorResponse("Excel file is empty.", 400));
-    }
-
-    // --- VALIDATE TRAINING ID ---
-    const trainingId = req.body.training || req.query.training;
-    if (!trainingId) {
-      return res.status(422).send(errorResponse("Training ID is required.", 422));
-    }
-
-    const trainingRec = await queryRunner.manager.findOne(training, {
-      where: { id: trainingId },
-      relations: ["trainingCategory", "trainingCategory.category", "trainingCoach"],
-    });
-
-    if (!trainingRec) {
-      return res.status(404).send(errorResponse("Training not found.", 404));
-    }
-
-    if (!trainingRec.trainingCoach) {
-      return res.status(400).send(errorResponse("Training coach is missing.", 400));
-    }
-
-    // ===============================
-    //       VALIDATION PRE-FETCH
-    // ===============================
-
-    const validationErrors: string[] = [];
-
-    // Ambil semua ID user dari file Excel untuk pencarian efisien
-    // Asumsikan kolom di Excel yang menyimpan ID user adalah 'userId'
-    const userIdsInFile = Array.from(
-      new Set(
-        excelRows
-          .filter(r => r.userId) // Filter baris yang userId-nya tidak kosong
-          .map(r => r.userId)
-      )
-    );
-
-    // Ambil data user dari DB dalam satu query
-    const users = await queryRunner.manager.findBy(user, { id: In(userIdsInFile) });
-    const userMap = new Map(users.map(u => [u.id, u])); // Map untuk pencarian cepat
-
-    // Schema validasi untuk setiap baris di Excel (hanya untuk participant baru, dikaitkan ke user existing)
-    const schema = Joi.object({
-      // Asumsikan user diidentifikasi oleh 'userId' di file Excel
-      userId: Joi.string().required(), // Validasi bahwa userId wajib ada
-      email: Joi.string().email().required(),
-      firstName: Joi.string().required(),
-      lastName: Joi.string().required(),
-      signatoryName: Joi.string().required(),
-      signatoryPosition: Joi.string().required(),
-      ttdImage: Joi.string().allow("").required(),
-      company: Joi.string().optional(),
-      companyAddress: Joi.string().optional(),
-      phone: Joi.string().optional(),
-      jobTitle: Joi.string().optional(),
-      officePhone: Joi.string().optional(),
-      message: Joi.string().optional(),
-    });
-
-    const successfulCreations: any[] = [];
-    const failedCreations: any[] = [];
-
-    for (let i = 0; i < excelRows.length; i++) {
-      const row = excelRows[i];
-      const rowIndex = i + 2; // +2 karena header dianggap row 1
-
-      // Validasi schema
-      const { error: validationError } = schema.validate(row);
-      if (validationError) {
-        failedCreations.push({ rowIndex, reason: `Schema Validation Error: ${validationError.message}` });
-        continue;
-      }
-
-      // --- PROSES: NEW PARTICIPANT (dikaitkan ke user existing) ---
-      // 1. Validasi User Existing
-      const u = userMap.get(row.userId);
-      if (!u) {
-         // Jika user tidak ditemukan di DB berdasarkan ID dari Excel
-         failedCreations.push({ rowIndex, userId: row.userId, reason: "User with this ID does not exist in the database." });
-         continue; // Lewati baris ini
-      }
-
-      // 2. Buat dan simpan Participant Baru yang dikaitkan ke User yang sudah ada
-      const newParticipant = new participant();
-      newParticipant.email = row.email;
-      newParticipant.firstName = row.firstName;
-      newParticipant.lastName = row.lastName;
-      newParticipant.company = row.company;
-      newParticipant.companyAddress = row.companyAddress;
-      newParticipant.phone = row.phone;
-      newParticipant.jobTitle = row.jobTitle;
-      newParticipant.officePhone = row.officePhone;
-      newParticipant.message = row.message;
-      newParticipant.user = u; // Kaitkan participant ke user yang sudah ada
-
-      const savedParticipant = await queryRunner.manager.save(participant, newParticipant);
-
-      // 3. Buat dan simpan Training Participant
-      const newTP = new trainingParticipant();
-      newTP.training = trainingRec;
-      newTP.participant = savedParticipant;
-      newTP.status = statusTraining.belumMulai;
-      newTP.coach = trainingRec.trainingCoach;
-      newTP.signatoryName = row.signatoryName;
-      newTP.signatoryPosition = row.signatoryPosition;
-      newTP.ttdImage = row.ttdImage;
-      newTP.startDateTraining = trainingRec.startDateTraining;
-      newTP.endDateTraining = trainingRec.endDateTraining;
-
-      const savedTP = await queryRunner.manager.save(trainingParticipant, newTP);
-
-      // 4. Buat dan simpan Training Participant Category
-      const tpcPromises = trainingRec.trainingCategory.map(async (tc) => {
-        const newTPC = new trainingParticipantCategory();
-        (newTPC as any).trainingParticipant = [savedTP];
-        (newTPC as any).category = tc.category;
-        return queryRunner.manager.save(trainingParticipantCategory, newTPC);
-      });
-      await Promise.all(tpcPromises);
-
-      // 5. Buat dan simpan Certificate
-      const cert = new certificate();
-      cert.trainingParticipant = savedTP;
-      cert.imageUrl = "";
-      cert.noLiscense = "";
-      cert.expiredAt = new Date();
-      const savedCert = await queryRunner.manager.save(certificate, cert);
-
-      // Kaitkan certificate ke trainingParticipant
-      savedTP.certificate = savedCert;
-      await queryRunner.manager.save(trainingParticipant, savedTP);
-
-      successfulCreations.push({
-        rowIndex,
-        participantId: savedParticipant.id,
-        userId: u.id, // Termasuk ID user yang dikaitkan jika perlu
-        name: `${savedParticipant.firstName} ${savedParticipant.lastName}`,
-        status: "Created as New Participant linked to existing User"
-      });
-    }
-
-    // Jika ada kegagalan selama loop (misalnya user tidak ditemukan), transaksi akan di-rollback
-    if (failedCreations.length > 0) {
-      await queryRunner.rollbackTransaction();
-      const totalFailed = failedCreations.length;
-      const totalSuccess = successfulCreations.length;
-      const errorMessage = `Process completed with errors. Success: ${totalSuccess}, Failed: ${totalFailed}. Details: ${JSON.stringify(failedCreations)}`;
-      return res.status(422).send(errorResponse(errorMessage, 422));
-    }
-
-    await queryRunner.commitTransaction();
-
-    return res.status(201).send(
-      successResponse(
-        `${successfulCreations.length} participants successfully created and registered to training.`,
-        {
-          totalParticipants: successfulCreations.length,
-          data: successfulCreations,
-        },
-        201
-      )
-    );
-
-  } catch (error) {
-    await queryRunner.rollbackTransaction();
-    console.error("Bulk participant upload error:", error);
-    return res.status(500).send(
-      errorResponse(error instanceof Error ? error.message : "Unknown Error", 500)
-    );
-  } finally {
-    await queryRunner.release();
-  }
-};

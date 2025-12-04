@@ -8,7 +8,7 @@ export class coach {
   id: string;
 
   @Column()
-  coachName: string;
+  coachName: string;  
 
   @CreateDateColumn()
   createdAt: Date;
