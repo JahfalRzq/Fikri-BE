@@ -7,7 +7,8 @@ import {
   deleteTraining,
   restoreTraining,
   bulkCreateTrainings,
-  getArchivedTrainings
+  getArchivedTrainings,
+  uploadTtdImage
 } from "@/controller/admin/training-management/training-management-controller";
 import {
   authMiddleware,
@@ -21,6 +22,14 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
 
+
+router.post("/create-training", [
+  authMiddleware,
+  uploadTtdImage, // Handle upload file
+  onlyAdminMiddleware,
+  createTraining,
+]);
+
 router.get("/get-all-training", [
   authMiddleware,
   getAllTraining,
@@ -33,15 +42,12 @@ router.get("/get-training-by-id/:id", [
   authMiddleware,
   getTrainingById,
 ]);
-router.post("/create-training", [
-  authMiddleware,
-  onlyAdminMiddleware,
-  createTraining,
-]);
+
 router.put("/update-training/:id", [
   authMiddleware,
   onlyAdminMiddleware,
   updateTraining,
+  uploadTtdImage,
 ]);
 router.delete("/delete-training/:id", [
   authMiddleware,
