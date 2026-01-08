@@ -1,8 +1,6 @@
-request rest :
+inde
 
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjRhYTc0ZjgzLTU1ZTEtNDFhMy04NGIxLTc3MTgzYWEzNjZhZCIsInVzZXJOYW1lIjoicGFydGljaXBhbnQwMSIsImNyZWF0ZWRBdCI6IjIwMjUtMTAtMzBUMjM6NDE6MzAuNDg2WiIsImlhdCI6MTc2MTg2OTM2MSwiZXhwIjoxNzYxOTU1NzYxfQ.YU5GWpA_6rlLYCgH8hiUribSjW_YNoCArY99YWD3RWI
-
-
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjVlNmY1NjYzLTlhNjAtNDgyMC05MzM2LTA4MWE0ZTNlNDZmMiIsInVzZXJOYW1lIjoiQWRtaW4xIiwiY3JlYXRlZEF0IjoiMjAyNS0xMi0wNFQwMTo1MDo0OC45MTJaIiwiaWF0IjoxNzY3ODcyNDg0LCJleHAiOjE3Njc5NTg4ODR9.vKjns4iYximb_cidjlao6WyHBvCbNRUtRMmyzZftkvw
 
 
 ###
@@ -32,7 +30,7 @@ Content-Type: application/json
 }
 
 ###
-POST  http://localhost:5000/api/v1/auth/login
+POST   http://localhost:5000/api/v1/auth/login
 Content-Type: application/json
 
 {     "userName"    : "Admin1",
@@ -234,7 +232,7 @@ Authorization: Bearer {{token}}
 
 
 ###
-GET  http://localhost:5000/api/v1/training/get-training-by-id/afec26ea-8013-4cfe-beab-1751668a6c01
+GET  http://localhost:5000/api/v1/training/get-training-by-id/d613c21a-45c5-4d00-830b-013fabadced5
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -399,30 +397,36 @@ Authorization: Bearer {{token}}
 
 
 ###
-GET http://localhost:5000/api/v1/certificate/get-certificate-by-training-id/afec26ea-8013-4cfe-beab-1751668a6c01
+GET http://localhost:5000/api/v1/certificates/get-certificate-by-training-id/4c8abd8f-24e3-4a21-a6bd-59cc5107143a
+Content-Type: application/json
 Authorization: Bearer {{token}}
 
+
 ###
-POST http://localhost:5000/api/v1/certificate/publish-certificate-by-training-id/7b794b58-6b9e-4f58-8c6f-49441ef72fe0
+PUT http://localhost:5000/api/v1/certificates/publish
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "certificates": [
-    {
-      "trainingParticipantId": "d452c1b3-0184-4bcf-a446-fecc3d5c949e",
-      "imageUrl": "https://example.com/certificates/cert-001.jpg",
-      "noLiscense": "TESTCERT-001",
-      "expiredAt": "2026-10-22"
-    }
-  ]
+  "trainingId": "9e147a8d-eb39-4c10-b679-90a07ba37e94",
+  "trainingParticipantIds": [
+    "45b05f9e-759a-4a36-b55d-baecbe3b6954"
+  ],
+  "template": 2
 }
+
+###
+GET http://localhost:5000/api/v1/certificates/get-certificate-by-no-license/CERT-002
+Content-Type: application/json
+
+
 
 
 ###
 GET http://localhost:5000/api/v1/participant-dashboard/get-certificate
 Content-Type: application/json
 Authorization: Bearer {{token}}
+
 
 
 ###

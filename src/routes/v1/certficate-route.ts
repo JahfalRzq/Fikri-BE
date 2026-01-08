@@ -2,7 +2,8 @@ import { Router } from "express";
 import {
   getCertificatesByTrainingId,
   publishCertificates,
-  getCertificateByNoLicense
+  getCertificateByNoLicense,
+  
  
 } from "@/controller/certificate/certificate-controller";
 
@@ -13,16 +14,19 @@ import {
 
 const router = Router();
 
-router.get("/get-certificate-by-training-id/:id", [
-  authMiddleware,
-  onlyAdminMiddleware,
-  getCertificatesByTrainingId,
-]);
+
 router.put("/publish", [
   authMiddleware,
   onlyAdminMiddleware,
   publishCertificates,
 ]);
+
+router.get("/get-certificate-by-training-id/:id", [
+  authMiddleware,
+  onlyAdminMiddleware,
+  getCertificatesByTrainingId,
+]);
+
 
 router.get("/get-certificate-by-no-license/:noLicense", [
   getCertificateByNoLicense,
