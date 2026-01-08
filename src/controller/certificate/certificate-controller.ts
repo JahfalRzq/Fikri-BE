@@ -283,16 +283,16 @@ async function generateCertificateImageHelper(template: any, tp: any, trainingId
 
 
 export const publishCertificates = async (req: Request, res: Response) => {
-const publishSchema = Joi.object({
-  trainingId: Joi.string().uuid().required(),
-  trainingParticipantIds: Joi.array()
-    .items(Joi.string().uuid())
-    .min(1)
-    .required(),
-  template: Joi.number().optional().default(1),
-});
+  const publishSchema = Joi.object({
+    trainingId: Joi.string().uuid().required(),
+    participantIds: Joi.array()
+      .items(Joi.string().uuid())
+      .min(1)
+      .required(),
+    template: Joi.number().optional().default(1),
+  });
 
- try {
+  try {
     const { error, value } = publishSchema.validate(req.body);
     if (error) {
       return res
@@ -300,13 +300,14 @@ const publishSchema = Joi.object({
         .send(validationResponse(error.details[0].message));
     }
 
-    const { trainingId, trainingParticipantIds, template } = value;
+    const { participantIds, trainingId, template } = value;
 
+    // Ambil SEMUA training participant untuk training ini
     const trainingParticipants = await trainingParticipantRepository.find({
       where: {
         training: { id: trainingId },
       },
-      relations: ["participant", "training", "certificate"],
+      relations: ["participant", "certificate", "training"],
     });
 
     if (!trainingParticipants.length) {
@@ -315,14 +316,17 @@ const publishSchema = Joi.object({
         .send(errorResponse("Training participants not found", 404));
     }
 
-    const updated: any[] = [];
+    const updatedCertificates: any[] = [];
     const skipped: string[] = [];
 
-    for (const tpId of trainingParticipantIds) {
-      const tp = trainingParticipants.find((tp) => tp.id === tpId);
+    for (const participantId of participantIds) {
+      // ✅ COCOK DENGAN RESPONSE GET PARTICIPANTS
+      const tp = trainingParticipants.find(
+        (tp) => tp.participant.id === participantId
+      );
 
       if (!tp) {
-        skipped.push(`${tpId} (not in this training)`);
+        skipped.push(`${participantId} (not in this training)`);
         continue;
       }
 
@@ -343,14 +347,16 @@ const publishSchema = Joi.object({
       cert.trainingParticipant = tp;
 
       const savedCert = await certificateRepository.save(cert);
+
       tp.certificate = savedCert;
       await trainingParticipantRepository.save(tp);
 
-      updated.push({
-        trainingParticipantId: tp.id,
-        certificateId: savedCert.id,
+      updatedCertificates.push({
+        id: savedCert.id,
         noLiscense: savedCert.noLiscense,
         imageUrl: savedCert.imageUrl,
+        expiredAt: savedCert.expiredAt,
+        participantId: tp.participant.id,
       });
     }
 
@@ -358,8 +364,8 @@ const publishSchema = Joi.object({
       successResponse(
         "Certificates published successfully",
         {
-          updatedCount: updated.length,
-          certificates: updated,
+          updatedCount: updatedCertificates.length,
+          certificates: updatedCertificates,
           skipped,
         },
         200
@@ -370,6 +376,7 @@ const publishSchema = Joi.object({
     return res.status(500).send(errorResponse(err.message, 500));
   }
 };
+
 
 
 
