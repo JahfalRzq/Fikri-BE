@@ -149,45 +149,45 @@ export const getCertificateByNoLicense = async (req: Request, res: Response) => 
       updatedAt: certificate.updatedAt, // Tambahkan ini
       trainingParticipant: tp
         ? {
-            id: tp.id,
-            status: tp.status,
-            // Tambahkan field dari trainingParticipant
-            startDateTraining: tp.startDateTraining,
-            endDateTraining: tp.endDateTraining,
-            ttdImage: tp.ttdImage,
-            signatoryName: tp.signatoryName,
-            signatoryPosition: tp.signatoryPosition,
-            participant: {
-              id: tp.participant?.id,
-              firstName: tp.participant?.firstName,
-              lastName: tp.participant?.lastName,
-              email: tp.participant?.email,
-              // Tambahkan field dari participant
-              company: tp.participant?.company,
-              jobTitle: tp.participant?.jobTitle,
-              // tambahkan field lain dari participant jika diperlukan
-            },
-            training: {
-              id: tp.training?.id,
-              trainingName: tp.training?.trainingName,
-              // tambahkan field lain dari training jika diperlukan
-            },
-            coach: tp.coach // Kembalikan data coach secara lengkap
-              ? {
-                  id: tp.coach.id,
-                  coachName: tp.coach.coachName,
-                  // tambahkan field lain dari coach jika diperlukan
-                }
-              : null,
-            category: category // Kembalikan data category dari join table
-              ? {
-                  id: category.id,
-                  categoryName: category.categoryName,
-                  trainingCode: category.trainingCode,
-                  // tambahkan field lain dari category jika diperlukan
-                }
-              : null,
-          }
+          id: tp.id,
+          status: tp.status,
+          // Tambahkan field dari trainingParticipant
+          startDateTraining: tp.startDateTraining,
+          endDateTraining: tp.endDateTraining,
+          ttdImage: tp.ttdImage,
+          signatoryName: tp.signatoryName,
+          signatoryPosition: tp.signatoryPosition,
+          participant: {
+            id: tp.participant?.id,
+            firstName: tp.participant?.firstName,
+            lastName: tp.participant?.lastName,
+            email: tp.participant?.email,
+            // Tambahkan field dari participant
+            company: tp.participant?.company,
+            jobTitle: tp.participant?.jobTitle,
+            // tambahkan field lain dari participant jika diperlukan
+          },
+          training: {
+            id: tp.training?.id,
+            trainingName: tp.training?.trainingName,
+            // tambahkan field lain dari training jika diperlukan
+          },
+          coach: tp.coach // Kembalikan data coach secara lengkap
+            ? {
+              id: tp.coach.id,
+              coachName: tp.coach.coachName,
+              // tambahkan field lain dari coach jika diperlukan
+            }
+            : null,
+          category: category // Kembalikan data category dari join table
+            ? {
+              id: category.id,
+              categoryName: category.categoryName,
+              trainingCode: category.trainingCode,
+              // tambahkan field lain dari category jika diperlukan
+            }
+            : null,
+        }
         : null,
     };
 
@@ -199,6 +199,265 @@ export const getCertificateByNoLicense = async (req: Request, res: Response) => 
     return res.status(500).send(errorResponse(error.message, 500));
   }
 };
+
+// Helper: generate certificate image for a trainingParticipant
+async function generateCertificateImage(template: any, tp: any, trainingId: any) {
+  const canvasWidth = 1200;
+  const canvasHeight = 800;
+  const canvas = createCanvas(canvasWidth, canvasHeight);
+  const ctx = canvas.getContext("2d");
+
+  // Resolve template filename and template id
+  let templateIdRaw: any = template;
+  let templateName = "1.png";
+  if (typeof template === "number" || (!isNaN(Number(template)) && String(template).trim() !== "")) {
+    templateIdRaw = Number(template);
+    templateName = `${templateIdRaw}.png`;
+  } else if (typeof template === "string" && template.trim()) {
+    templateName = template.trim();
+    if (!templateName.toLowerCase().endsWith(".png")) templateName += ".png";
+    const maybeNum = parseInt(templateName.replace(/\.png$/i, ""), 10);
+    if (!isNaN(maybeNum)) templateIdRaw = maybeNum;
+  }
+
+  // Fill background or draw template
+  const templatePath = path.join(process.cwd(), "public", "templates", templateName);
+  try {
+    const exists = fs.existsSync(templatePath);
+    if (exists) {
+      try {
+        const img = await loadImage(templatePath);
+        if (img) {
+          ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+        } else {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        }
+      } catch (e) {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+      }
+    } else {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    }
+  } catch (e) {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  }
+
+  // Infer chosen logo from template id or pick default
+  let chosenLogo = `logo-1.png`;
+  if (templateIdRaw && !isNaN(Number(templateIdRaw))) {
+    chosenLogo = `logo-${Number(templateIdRaw)}.png`;
+  }
+
+  // Overlay (watermark)
+  const overlayCandidates = [
+    path.join(process.cwd(), "public", "logo", chosenLogo),
+    path.join(process.cwd(), "public", "logos", chosenLogo),
+    path.join(process.cwd(), "public", "templates", chosenLogo),
+    path.join(process.cwd(), "public", chosenLogo),
+  ];
+  for (const cand of overlayCandidates) {
+    try {
+      if (fs.existsSync(cand)) {
+        try {
+          const imgO = await loadImage(cand);
+          if (imgO) {
+            ctx.save();
+            ctx.globalAlpha = 0.1;
+            const targetW = Math.round(canvasWidth * 0.9);
+            const scale = targetW / imgO.width || 1;
+            const w = Math.round(imgO.width * scale);
+            const h = Math.round(imgO.height * scale);
+            const x = Math.round((canvasWidth - w) / 2);
+            const y = Math.round((canvasHeight - h) / 2);
+            ctx.drawImage(imgO, x, y, w, h);
+            ctx.restore();
+            break;
+          }
+        } catch (e) {
+          // continue
+        }
+      }
+    } catch (e) {
+      // continue
+    }
+  }
+
+  // Top logo
+  const topLogoCandidates = [
+    path.join(process.cwd(), "public", "logo", chosenLogo),
+    path.join(process.cwd(), "public", "logos", chosenLogo),
+    path.join(process.cwd(), "public", chosenLogo),
+  ];
+  for (const cand of topLogoCandidates) {
+    try {
+      if (fs.existsSync(cand)) {
+        try {
+          const img = await loadImage(cand);
+          if (img) {
+            const maxWidth = 200;
+            const scale = Math.min(1, maxWidth / img.width || 1);
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            const x = Math.round((canvasWidth - w) / 2);
+            const y = 40;
+            ctx.drawImage(img, x, y, w, h);
+            break;
+          }
+        } catch (e) {
+          // continue
+        }
+      }
+    } catch (e) {
+      // continue
+    }
+  }
+
+  // Certificate content (centered)
+  const now = new Date();
+  const topMargin = 40;
+  ctx.fillStyle = "#1b263b";
+  ctx.textAlign = "center";
+  ctx.font = 'bold 72px "Playfair Display", serif';
+  ctx.fillText("CERTIFICATE", canvasWidth / 2, 210 + 0);
+
+  const tplCheck = String(template || "").trim();
+  if (tplCheck !== "1" && tplCheck.toLowerCase() !== "1.png") {
+    ctx.font = '18px "Montserrat", sans-serif';
+    ctx.fillStyle = "#333";
+    ctx.fillText("PT ELTASA PRIMA KONSULTA", canvasWidth / 2, 250);
+  }
+
+  ctx.font = '20px "Montserrat", sans-serif';
+  ctx.fillStyle = "#000";
+  ctx.fillText("1687/EXP/14/XI/2025", canvasWidth / 2, 235 + topMargin);
+
+  ctx.font = '24px "Montserrat", sans-serif';
+  ctx.fillText("This is to certify that", canvasWidth / 2, 300 + topMargin);
+
+  const recipient = `${tp.participant.firstName || ""} ${tp.participant.lastName || ""}`.trim();
+  ctx.font = 'italic bold 44px "Playfair Display", serif';
+  ctx.fillStyle = "#000";
+  ctx.fillText(recipient || "-", canvasWidth / 2, 360 + topMargin);
+
+  ctx.font = '20px "Montserrat", sans-serif';
+  ctx.fillStyle = "#000";
+  ctx.fillText("Departemen Teknologi Industri Pertanian, Universitas Gadjah Mada", canvasWidth / 2, 390 + topMargin);
+
+  ctx.font = '24px "Montserrat", sans-serif';
+  ctx.fillStyle = "#000";
+  ctx.fillText("Has Successfully Completed Training Course on:", canvasWidth / 2, 460 + topMargin);
+
+  const course = tp.training?.trainingName || "Data Analyst";
+  ctx.font = 'bold 36px "Montserrat", sans-serif';
+  ctx.fillStyle = "#000";
+  ctx.fillText(course, canvasWidth / 2, 510 + topMargin);
+
+  ctx.font = '20px "Montserrat", sans-serif';
+  ctx.fillStyle = "#000";
+  ctx.fillText("Held on November 27th until November 28th, 2025 in Yogyakarta", canvasWidth / 2, 550 + topMargin);
+
+  // Signatory area
+  const signY = 600 + topMargin;
+  ctx.font = '20px "Montserrat", sans-serif';
+  ctx.fillStyle = "#000";
+  const signatory = tp.signatoryName || "Prof. Dr. Ir. Elisa Kusrini, MT, CPIM, CSCP";
+  ctx.textAlign = "center";
+  const signX = canvasWidth / 2;
+  ctx.fillText(signatory, signX, signY);
+
+  // Try to draw signature image ttd-<id>
+  let ttdFile = "ttd-1.png";
+  try {
+    const tpl = String(template || "").trim();
+    const tplNumStr = tpl.replace(/\.png$/i, "");
+    const tplNum = parseInt(tplNumStr, 10);
+    if (!isNaN(tplNum) && tplNum > 0) {
+      ttdFile = `ttd-${tplNum}.png`;
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  const ttdCandidates = [
+    path.join(process.cwd(), "public", "ttds", ttdFile),
+    path.join(process.cwd(), "public", "ttd", ttdFile),
+    path.join(process.cwd(), "public", "signatures", ttdFile),
+  ];
+  let ttdDrawn = false;
+  for (const cand of ttdCandidates) {
+    try {
+      if (fs.existsSync(cand)) {
+        try {
+          const imgT = await loadImage(cand);
+          if (imgT) {
+            const maxW = 180;
+            const scale = Math.min(1, maxW / imgT.width || 1);
+            const w = Math.round(imgT.width * scale);
+            const h = Math.round(imgT.height * scale);
+            const x = signX - Math.round(w / 2);
+            const y = signY - Math.round(h / 2) + 70;
+            ctx.drawImage(imgT, x, y, w, h);
+            ttdDrawn = true;
+            break;
+          }
+        } catch (e) {
+          // continue
+        }
+      }
+    } catch (e) {
+      // continue
+    }
+  }
+  if (!ttdDrawn) {
+    // placeholder signature line
+    const sigWidth = 220;
+    ctx.beginPath();
+    ctx.moveTo(signX - sigWidth / 2, signY + 10);
+    ctx.lineTo(signX + sigWidth / 2, signY + 10);
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Organization and director
+  ctx.font = '600 18px "Montserrat", sans-serif';
+  ctx.textAlign = "center";
+  const org = tp.organization || "SCOR-P";
+  const orgY = signY + 70;
+  ctx.fillText(org, canvasWidth / 2, orgY);
+  const orgW = ctx.measureText(org).width;
+  ctx.beginPath();
+  ctx.moveTo(canvasWidth / 2 - orgW / 2, orgY + 4);
+  ctx.lineTo(canvasWidth / 2 + orgW / 2, orgY + 4);
+  ctx.stroke();
+
+  ctx.font = '18px "Montserrat", sans-serif';
+  ctx.fillText("Director", canvasWidth / 2, orgY + 30);
+
+  // Save output
+  const outDir = path.join(process.cwd(), "public", "certificates");
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
+  const noLicense = `EXP-${makeShort(trainingId)}-${makeShort(tp.participant.id)}-${ts}-${rand}`;
+  const filename = `${noLicense}.png`;
+  const outPath = path.join(outDir, filename);
+  const buffer = canvas.toBuffer("image/png");
+  fs.writeFileSync(outPath, buffer);
+
+  return {
+    noLicense,
+    filename,
+    imageUrl: `/certificates/${filename}`,
+    expiredAt: new Date(Date.now() + 3 * 365 * 24 * 60 * 60 * 1000),
+  };
+}
 
 
 
@@ -251,102 +510,31 @@ export const publishCertificates = async (req: Request, res: Response) => {
 
       // Generate certificate image dan save to public/certificates/<noLiscense>.png
       try {
-        const canvasWidth = 1200;
-        const canvasHeight = 800;
-        const canvas = createCanvas(canvasWidth, canvasHeight);
-        const ctx = canvas.getContext("2d");
+        const gen = await generateCertificateImage(template, tp, trainingId);
+        console.log("BALLALAL", gen)
+        // // Update certificate fields
+        // cert.noLiscense = gen.noLicense;
+        // cert.imageUrl = gen.imageUrl;
+        // cert.expiredAt = gen.expiredAt; // 3 year from now set in helper
 
-        // Resolve template filename. Accept numeric ids (1 -> "1.png"), plain names or full filenames.
-        let templateName = "1.png"; // default template path is public/templates/1.png
-        if (typeof template === "number" || (!isNaN(Number(template)) && String(template).trim() !== "")) {
-          templateName = `${template}.png`;
-        } else if (typeof template === "string" && template.trim()) {
-          templateName = template.trim();
-          if (!templateName.toLowerCase().endsWith(".png")) templateName += ".png";
-        }
-        const templatePath = path.join(process.cwd(), "public", "templates", templateName);
-        try {
-          const exists = fs.existsSync(String(templatePath));
-          console.info(`Template path: ${templatePath} (exists: ${exists})`);
-          if (exists) {
-            try {
-              const img = await loadImage(String(templatePath));
-              if (img) {
-                ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-                console.info(`Template image drawn for participant ${participantId}`);
-              } else {
-                console.warn(`loadImage returned falsy for ${templatePath}`);
-                ctx.fillStyle = "#ffffff";
-                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-              }
-            } catch (imgErr) {
-              console.warn(`Failed to load template image ${templatePath}:`, imgErr);
-              ctx.fillStyle = "#ffffff";
-              ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-            }
-          } else {
-            // fallback: fill white background
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-          }
-        } catch (existsErr) {
-          // defensive: if fs.existsSync throws because of wrong type, fallback to white
-          console.warn(`Template existence check failed for ${templatePath}:`, existsErr);
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-        }
+        // // Link certificate to trainingParticipant before saving (entity relationship)
+        // try {
+        //   (cert as any).trainingParticipant = tp;
+        // } catch (e) {
+        //   // ignore if relationship doesn't exist on entity shape
+        // }
 
-        // Draw participant name
-        const name = `${tp.participant.firstName || ""} ${tp.participant.lastName || ""}`.trim();
-        ctx.fillStyle = "#000";
-        ctx.textAlign = "center";
+        // const saved = await certificateRepository.save(cert);
+        // // attach to tp for later mapping and persist the relationship on the trainingParticipant side
+        // try {
+        //   (tp as any).certificate = saved;
+        //   await trainingParticipantRepository.save(tp);
+        // } catch (relErr) {
+        //   // non-fatal: log but continue — certificate itself was saved
+        //   console.warn(`Failed to link certificate to trainingParticipant ${tp.id}:`, relErr);
+        // }
 
-        // Title/name style (uses registered Playfair Display if available)
-        ctx.font = '48px "Playfair Display"';
-        ctx.fillText(name || "-", canvasWidth / 2, canvasHeight / 2 - 20);
-
-        // Draw training info (small)
-        const trainingName = tp.training?.trainingName || `Training ${trainingId}`;
-        ctx.font = '20px "Montserrat"';
-        ctx.fillText(trainingName, canvasWidth / 2, canvasHeight / 2 + 40);
-
-        // Ensure output directory
-        const outDir = path.join(process.cwd(), "public", "certificates");
-        if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
-
-        const pad = (n: number) => n.toString().padStart(2, "0");
-        const now = new Date();
-        const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-        const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
-        const noLicense = `EXP-${makeShort(trainingId)}-${makeShort(tp.participant.id)}-${ts}-${rand}`;
-        const filename = `${noLicense}.png`;
-        const outPath = path.join(outDir, filename);
-        const buffer = canvas.toBuffer("image/png");
-        fs.writeFileSync(outPath, buffer);
-
-        // Update certificate fields
-        cert.noLiscense = noLicense;
-        cert.imageUrl = `/certificates/${filename}`;
-        cert.expiredAt = new Date(Date.now() + 3 * 365 * 24 * 60 * 60 * 1000); // 3 year from now
-
-        // Link certificate to trainingParticipant before saving (entity relationship)
-        try {
-          (cert as any).trainingParticipant = tp;
-        } catch (e) {
-          // ignore if relationship doesn't exist on entity shape
-        }
-
-        const saved = await certificateRepository.save(cert);
-        // attach to tp for later mapping and persist the relationship on the trainingParticipant side
-        try {
-          (tp as any).certificate = saved;
-          await trainingParticipantRepository.save(tp);
-        } catch (relErr) {
-          // non-fatal: log but continue — certificate itself was saved
-          console.warn(`Failed to link certificate to trainingParticipant ${tp.id}:`, relErr);
-        }
-
-        updatedCertificates.push(saved);
+        // updatedCertificates.push(saved);
       } catch (genErr: any) {
         // If image generation fails for this participant, skip and record reason
         skipped.push(`${participantId} (image generation failed: ${genErr?.message || genErr})`);
