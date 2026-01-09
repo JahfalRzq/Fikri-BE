@@ -78,10 +78,12 @@ export const getDashboardData = async (req: Request, res: Response) => {
     const chartData = await participantTrainingRepository
       .createQueryBuilder("tp")
       .select("DATE_FORMAT(tp.startDateTraining, '%b')", "month") // Format bulan (Jan, Feb, ...)
+      .addSelect("DATE_FORMAT(tp.startDateTraining, '%Y-%m')", "yearMonth") // For ordering
       .addSelect("COUNT(tp.id)", "value")
       .where("tp.startDateTraining >= :oneYearAgo", { oneYearAgo })
       .groupBy("DATE_FORMAT(tp.startDateTraining, '%Y-%m')") // Group by bulan-tahun untuk akurasi
-      .orderBy("tp.startDateTraining", "ASC")
+      .addGroupBy("DATE_FORMAT(tp.startDateTraining, '%b')") // Also group by month name
+      .orderBy("yearMonth", "ASC")
       .getRawMany();
 
     // Isi data bulan kosong jika diperlukan
