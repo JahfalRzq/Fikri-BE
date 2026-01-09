@@ -56,8 +56,9 @@ export const createTraining = async (req: Request, res: Response) => {
     price: Joi.number().min(0).required(),
     startDateTraining: Joi.date().required(),
     endDateTraining: Joi.date().required(),
-    signatoryPosition: Joi.string().required(),
-    signatoryName: Joi.string().required(),
+    signatoryPosition: Joi.string().optional().allow("", null),
+    signatoryName: Joi.string().optional().allow("", null),
+    ttdImage: Joi.string().optional().allow("", null),
   });
 
   try {
@@ -67,14 +68,7 @@ export const createTraining = async (req: Request, res: Response) => {
       return res.status(422).send(validationResponse(error));
     }
 
-    // ✅ Validasi file upload
-    if (!req.file) {
-      return res.status(422).send(
-        validationResponse([
-          { message: '"ttdImage" is required', path: ['ttdImage'] },
-        ])
-      );
-    }
+    // ✅ Validasi file upload (optional)
 
     const {
       trainingName,
@@ -87,7 +81,7 @@ export const createTraining = async (req: Request, res: Response) => {
       signatoryName,
     } = value;
 
-    const ttdImagePath = req.file.path;
+    const ttdImagePath = req.file?.path || null;
 
     // 🔹 Validasi Coach
     const findCoach = await coachRepository.findOne({ where: { id: coachId } });

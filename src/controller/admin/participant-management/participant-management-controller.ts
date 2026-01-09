@@ -275,10 +275,10 @@ export const bulkUploadParticipants = async (req: Request, res: Response) => {
         newTP.invoice = parseBoolOrUndef(row.invoice) ?? null as any;
         newTP.pajak = parseBoolOrUndef(row['pajak (bool)']) ?? null as any;
 
-        // Signatory/ttd and dates from training master
-        newTP.signatoryName = trainingRec.signatoryName || "";
-        newTP.signatoryPosition = trainingRec.signatoryPosition || "";
-        newTP.ttdImage = trainingRec.ttdImage || "";
+        // Signatory/ttd and dates from training master (nullable)
+        newTP.signatoryName = trainingRec.signatoryName || null;
+        newTP.signatoryPosition = trainingRec.signatoryPosition || null;
+        newTP.ttdImage = trainingRec.ttdImage || null;
         newTP.startDateTraining = trainingRec.startDateTraining;
         newTP.endDateTraining = trainingRec.endDateTraining;
 
@@ -854,9 +854,10 @@ export const createParticipant = async (req: Request, res: Response) => {
           firstName: Joi.string().when('isExisting', { is: false, then: Joi.required() }),
           lastName: Joi.string().when('isExisting', { is: false, then: Joi.required() }),
           user: Joi.string().when('isExisting', { is: false, then: Joi.required() }),
-          signatoryName: Joi.string().when('isExisting', { is: false, then: Joi.required() }),
-          signatoryPosition: Joi.string().when('isExisting', { is: false, then: Joi.required() }),
-          ttdImage: Joi.string().allow("").when('isExisting', { is: false, then: Joi.required() }),
+
+          signatoryName: Joi.string().optional().allow("", null),
+          signatoryPosition: Joi.string().optional().allow("", null),
+          ttdImage: Joi.string().optional().allow("", null),
 
           // Field opsional untuk isExisting: false
           company: Joi.string().optional(),

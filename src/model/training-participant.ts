@@ -20,14 +20,14 @@ export class trainingParticipant {
   @Column({ type: "enum", enum: statusTraining })
   status: statusTraining;
 
-  @Column()
-  ttdImage: string;
+  @Column({ nullable: true, default: null })
+  ttdImage: string | null;
 
-  @Column()
-  signatoryPosition: string;
+  @Column({ nullable: true, default: null })
+  signatoryPosition: string | null;
 
-  @Column()
-  signatoryName: string;
+  @Column({ nullable: true, default: null })
+  signatoryName: string | null;
 
   @Column()
   startDateTraining: Date;

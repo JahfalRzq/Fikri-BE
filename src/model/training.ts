@@ -23,14 +23,14 @@ export class training {
   @Column()
   endDateTraining: Date;
 
-  @Column()
-  ttdImage: string;
+  @Column({ nullable: true, default: null })
+  ttdImage: string | null;
 
-  @Column()
-  signatoryPosition: string;
+  @Column({ nullable: true, default: null })
+  signatoryPosition: string | null;
 
-  @Column()
-  signatoryName: string;
+  @Column({ nullable: true, default: null })
+  signatoryName: string | null;
 
   @ManyToOne(() => coach, (c) => c.training)
   @JoinColumn()
