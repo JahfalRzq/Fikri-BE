@@ -31,42 +31,14 @@ async function generateCertificateImageHelper(template: any, tp: any, trainingId
 
   // Resolve template filename and template id
   let templateIdRaw: any = template;
-  let templateName = "1.png";
+  // let templateName = "1.png";
   if (typeof template === "number" || (!isNaN(Number(template)) && String(template).trim() !== "")) {
     templateIdRaw = Number(template);
-    templateName = `${templateIdRaw}.png`;
-  } else if (typeof template === "string" && template.trim()) {
-    templateName = template.trim();
-    if (!templateName.toLowerCase().endsWith(".png")) templateName += ".png";
-    const maybeNum = parseInt(templateName.replace(/\.png$/i, ""), 10);
-    if (!isNaN(maybeNum)) templateIdRaw = maybeNum;
   }
 
   // Fill background or draw template
-  const templatePath = path.join(process.cwd(), "public", "templates", templateName);
-  try {
-    const exists = fs.existsSync(templatePath);
-    if (exists) {
-      try {
-        const img = await loadImage(templatePath);
-        if (img) {
-          ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-        } else {
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-        }
-      } catch (e) {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-      }
-    } else {
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-    }
-  } catch (e) {
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-  }
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
   // Infer chosen logo from template id or pick default
   let chosenLogo = `logo-1.png`;
@@ -249,7 +221,7 @@ async function generateCertificateImageHelper(template: any, tp: any, trainingId
   ctx.font = '600 18px "Montserrat", sans-serif';
   ctx.textAlign = "center";
   const org = tp.organization || "SCOR-P";
-  const orgY = signY + 70;
+  const orgY = signY + 100;
   ctx.fillText(org, canvasWidth / 2, orgY);
   const orgW = ctx.measureText(org).width;
   ctx.beginPath();
