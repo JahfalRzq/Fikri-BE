@@ -927,11 +927,14 @@ export const createParticipant = async (req: Request, res: Response) => {
             continue;
           }
 
+          const now = new Date();
+          const isStarted = trainingRec.startDateTraining <= now;
+          const isEnded = trainingRec.endDateTraining < now;
           // Proses pembuatan relasi baru
           const newTP = new trainingParticipant();
           newTP.training = trainingRec;
           newTP.participant = selectedParticipant;
-          newTP.status = statusTraining.belumMulai;
+          newTP.status = isEnded ? statusTraining.selesai : isStarted ? statusTraining.sedangBerlangsung : statusTraining.belumMulai;
           newTP.coach = trainingRec.trainingCoach;
           newTP.startDateTraining = trainingRec.startDateTraining;
           newTP.endDateTraining = trainingRec.endDateTraining;
