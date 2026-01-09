@@ -56,9 +56,9 @@ export const createTraining = async (req: Request, res: Response) => {
     price: Joi.number().min(0).required(),
     startDateTraining: Joi.date().required(),
     endDateTraining: Joi.date().required(),
-    signatoryPosition: Joi.string().optional().allow("", null),
-    signatoryName: Joi.string().optional().allow("", null),
-    ttdImage: Joi.string().optional().allow("", null),
+    signatoryPosition: Joi.string().optional().allow(""),
+    signatoryName: Joi.string().optional().allow(""),
+    ttdImage: Joi.string().optional().allow(""),
   });
 
   try {
@@ -81,7 +81,7 @@ export const createTraining = async (req: Request, res: Response) => {
       signatoryName,
     } = value;
 
-    const ttdImagePath = req.file?.path || null;
+    const ttdImagePath = req.file?.path || "";
 
     // 🔹 Validasi Coach
     const findCoach = await coachRepository.findOne({ where: { id: coachId } });
@@ -148,6 +148,7 @@ export const updateTraining = async (req: Request, res: Response) => {
       endDateTraining: Joi.date().optional(),
       signatoryName: Joi.string().optional(),
       signatoryPosition: Joi.string().optional(),
+      ttdImage: Joi.string().optional().allow(""),
       categoryId: Joi.string().optional(),
     }).validate(input);
 

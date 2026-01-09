@@ -23,13 +23,13 @@ export class training {
   @Column()
   endDateTraining: Date;
 
-  @Column({ nullable: true, default: null })
+  @Column({ type: 'varchar', length: 255, nullable: true, default: null })
   ttdImage: string | null;
 
-  @Column({ nullable: true, default: null })
+  @Column({ type: 'varchar', length: 255, nullable: true, default: null })
   signatoryPosition: string | null;
 
-  @Column({ nullable: true, default: null })
+  @Column({ type: 'varchar', length: 255, nullable: true, default: null })
   signatoryName: string | null;
 
   @ManyToOne(() => coach, (c) => c.training)
