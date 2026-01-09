@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { AppDataSource } from "@/data-source";
 import { training } from "@/model/training";
+import { trainingParticipant, statusTraining } from "@/model/training-participant";
 import Joi from "joi";
 import { successResponse, validationResponse, errorResponse } from "@/utils/response";
 import { coach } from "@/model/coach";
@@ -17,6 +18,7 @@ const trainingRepository = AppDataSource.getRepository(training);
 const coachRepository = AppDataSource.getRepository(coach);
 const categoryRepository = AppDataSource.getRepository(category);
 const trainingCategoryRepository = AppDataSource.getRepository(trainingCategory);
+const trainingParticipantRepository = AppDataSource.getRepository(trainingParticipant);
 
 
 
@@ -289,6 +291,28 @@ export const getTrainingById = async (req: Request, res: Response) => {
         .send(errorResponse("Training Not Found", 404));
     }
 
+    // Sync participant statuses based on training dates
+    if (Array.isArray(result.trainingParticipant) && result.trainingParticipant.length > 0) {
+      const now = new Date();
+      for (const tp of result.trainingParticipant) {
+        let desiredStatus = tp.status;
+        if (now.getTime() > new Date(result.endDateTraining).getTime()) {
+          desiredStatus = statusTraining.selesai;
+        } else if (now.getTime() >= new Date(result.startDateTraining).getTime()) {
+          desiredStatus = statusTraining.sedangBerlangsung;
+        }
+
+        if (desiredStatus !== tp.status) {
+          tp.status = desiredStatus;
+          try {
+            await trainingParticipantRepository.save(tp);
+          } catch (err) {
+            console.error('Failed to update participant status', err);
+          }
+        }
+      }
+    }
+
     // 🔹 Map category (karena relasi OneToMany)
     const categories =
       result.trainingCategory?.map((tc) => ({
@@ -404,6 +428,29 @@ export const getAllTraining = async (req: Request, res: Response) => {
     // Eksekusi query
     const [trainings, totalCount] = await queryBuilder.getManyAndCount();
 
+    // Sync participant statuses for each training based on training dates
+    const now = new Date();
+    for (const t of trainings) {
+      if (Array.isArray(t.trainingParticipant) && t.trainingParticipant.length > 0) {
+        for (const tp of t.trainingParticipant) {
+          let desiredStatus = tp.status;
+          if (now.getTime() > new Date(t.endDateTraining).getTime()) {
+            desiredStatus = statusTraining.selesai;
+          } else if (now.getTime() >= new Date(t.startDateTraining).getTime()) {
+            desiredStatus = statusTraining.sedangBerlangsung;
+          }
+
+          if (desiredStatus !== tp.status) {
+            tp.status = desiredStatus;
+            try {
+              void trainingParticipantRepository.save(tp);
+            } catch (err) {
+              console.error('Failed to update participant status', err);
+            }
+          }
+        }
+      }
+    }
     // Format response
     const data = trainings.map((t) => {
       // Ambil semua kategori terkait
